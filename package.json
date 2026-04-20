@@ -2,6 +2,7 @@
   "name": "viaje-en-el-tiempo",
   "version": "1.0.0",
   "description": "Ingeniería de Software — Viaje en el Tiempo (Gemini API)",
+  "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
     "dev": "vercel dev"
