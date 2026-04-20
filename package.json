@@ -4,8 +4,7 @@
   "description": "Ingeniería de Software — Viaje en el Tiempo (Gemini API)",
   "scripts": {
     "start": "node api/index.js",
-    "dev": "vercel dev",
-    "vercel": "vercel"
+    "dev": "vercel dev"
   },
   "dependencies": {
     "@google/genai": "^0.7.0",
