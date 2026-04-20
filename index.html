@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Por Desocupe 123</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="scripts.js"></script>
+  <!-- Phaser para el juego -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- Audio control -->
+ <button id="music-control" onclick="toggleMusic()" title="Música de fondo">🎵</button>
+<button id="audio-control" onclick="toggleAudio()" title="Sonido">🔊</button>
+
+<!-- ============================================================ PANTALLA DE CARGA -->
+<div id="loading-screen">
+  <canvas id="load-canvas" width="200" height="200"></canvas>
+  <div class="load-title">INICIALIZANDO MÁQUINA DEL TIEMPO</div>
+  <div class="load-phase" id="load-phase">calibrando flujo temporal…</div>
+  <div class="load-bar"><div class="load-fill" id="load-fill"></div></div>
+  <div class="load-pct" id="load-pct">0%</div>
+</div>
+
+<!-- ============================================================ NAVBAR SPLIT -->
+<nav id="main-nav">
+  <!-- Pastilla izquierda: brand -->
+  <a class="nav-brand-pill" href="#" onclick="nav('home');return false;">
+    <div class="nav-brand-icon" id="nav-icon">⏱</div>
+    <div class="nav-brand-text">
+      <span class="nav-brand-name">Introducción</span>
+      <span class="nav-era" id="nav-era">Ing. de Software</span>
+    </div>
+  </a>
+
+  <!-- Pastilla derecha: links -->
+  <div class="nav-links-pill" id="nav-links-pill">
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#" onclick="nav('home');return false;"       data-s="home">🏠 Inicio</a></li>
+      <li><a href="#" onclick="nav('explorar');return false;"   data-s="explorar">🗺 Explorar</a></li>
+      <li><a href="#" onclick="nav('ia');return false;"         data-s="ia">🤖 IA</a></li>
+      <li><a href="#" onclick="nav('foro');return false;"       data-s="foro">💬 Foro</a></li>
+      <li><a href="#" onclick="nav('play');return false;"       data-s="play">🎮 Play</a></li>
+      <li><a href="#" onclick="nav('materiales');return false;" data-s="materiales">📚 Materiales</a></li>
+    </ul>
+  </div>
+
+  <!-- Hamburger (mobile) -->
+  <button class="nav-burger" id="burger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ============================================================ HOME -->
+<section id="home" class="section active">
+  <p class="hero-eyebrow">Introducción a la Ingeniería de Software</p>
+  <h1 class="hero-title">
+    VIAJA A TRAVÉS<br>DE LA <span class="ta">HISTORIA</span><br>DEL <span class="ta2">CONOCIMIENTO</span>
+  </h1>
+  <p class="hero-sub">
+    Desde los algoritmos cuneiformes de Mesopotamia hasta la inteligencia artificial del Siglo XXI.
+    Explora cada época, sus autores y avances que dieron forma a la ingeniería de software.
+  </p>
+  <div class="btn-row">
+    <button class="btn btn-p" onclick="nav('explorar')">🗺 &nbsp;EXPLORAR ÉPOCAS</button>
+    <button class="btn btn-g" onclick="nav('ia')">🤖 &nbsp;HABLAR CON LA IA</button>
+  </div>
+  <div class="hero-cards">
+    <div class="hero-card" onclick="nav('explorar')"><span class="hero-card-icon">🗺️</span><span class="hero-card-label">Mapa<br>Interactivo</span></div>
+    <div class="hero-card" onclick="nav('ia')"><span class="hero-card-icon">🤖</span><span class="hero-card-label">IA<br>Contextual</span></div>
+    <div class="hero-card" onclick="nav('foro')"><span class="hero-card-icon">💬</span><span class="hero-card-label">Foro<br>Abierto</span></div>
+    <div class="hero-card" onclick="nav('play')"><span class="hero-card-icon">🎮</span><span class="hero-card-label">Jugar<br>Ahora</span></div>
+    <div class="hero-card" onclick="nav('materiales')"><span class="hero-card-icon">📚</span><span class="hero-card-label">Material<br>Descargable</span></div>
+  </div>
+</section>
+
+<!-- ============================================================ EXPLORAR -->
+<section id="explorar" class="section">
+  <div class="explore-hdr">
+    <h2>🗺 EXPLORAR <span style="color:var(--accent)">ÉPOCAS</span></h2>
+  </div>
+  <div class="explore-body">
+    <div class="map-shell" id="map-shell">
+      <div class="map-hud">
+        <div class="map-badge" id="map-badge">Selecciona una época</div>
+        <div class="map-coords" id="map-coords"></div>
+      </div>
+      <canvas id="map-canvas"></canvas>
+      <div class="epoch-panel" id="epoch-panel">
+        <div class="ep-top">
+          <h3 class="ep-title" id="ep-title">—</h3>
+          <button class="ep-close" onclick="closePanel()">✕</button>
+        </div>
+        <p class="ep-summary" id="ep-summary"></p>
+        <div class="ep-tags" id="ep-tags"></div>
+        <button class="ep-btn" onclick="askAboutEpoch()">🤖 Preguntar a la IA →</button>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-hdr">⏳ ÉPOCAS</div>
+      <div class="sidebar-scroll" id="sidebar-scroll"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ IA -->
+<section id="ia" class="section">
+  <div class="ia-layout">
+    <div class="chat-box">
+      <div class="chat-hdr">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <div class="chat-hdr-name">Chróno — Asistente IA</div>
+          <div class="chat-hdr-status"><span class="sdot"></span><span id="ai-status">Listo para responder</span></div>
+        </div>
+        <div class="rag-row">
+          <span>Solo material</span>
+          <button class="rag-sw" id="rag-sw" onclick="toggleRAG()" title="Modo estricto: solo responde con el material del curso"></button>
+        </div>
+      </div>
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="msg ai">
+          ¡Hola! Soy <strong>Chróno</strong> 🕰️, tu guía por la historia de la ingeniería de software.<br><br>
+          Puedo responder sobre cualquier época — desde Mesopotamia hasta el Siglo XXI — usando el <strong>material del curso</strong> y conocimiento general.<br><br>
+          <em>Activa "Solo material" para respuestas estrictamente del curso.</em>
+        </div>
+      </div>
+      <div class="typing" id="typing"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>
+      <div class="chat-bar">
+        <textarea class="chat-input" id="chat-input" placeholder="Escribe tu pregunta…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()">➤</button>
+      </div>
+    </div>
+    <div class="ctx-panel">
+      <div class="ctx-h">CONTEXTO</div>
+      <div class="ctx-card" id="ctx-card">
+        <div class="ctx-name" id="ctx-name">Ninguna época activa</div>
+        <div class="ctx-sum" id="ctx-sum">Selecciona una época en el mapa.</div>
+      </div>
+      <div class="ctx-h">SUGERIDAS</div>
+      <div id="ctx-sugs">
+        <button class="sug-btn" onclick="fillSend(this.textContent)">¿Qué inventos marcaron la historia del software?</button>
+        <button class="sug-btn" onclick="fillSend(this.textContent)">¿Quién fue el primer programador de la historia?</button>
+        <button class="sug-btn" onclick="fillSend(this.textContent)">¿Cómo influyó la matemática griega en la computación?</button>
+      </div>
+      <div class="ctx-tip"><strong>Modo "Solo material":</strong> La IA responde únicamente con el contenido del curso. Desactivado: complementa con conocimiento general.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FORO -->
+<section id="foro" class="section">
+  <div class="foro-wrap">
+    <p class="foro-title">💬 FORO DE <span style="color:var(--accent)">DISCUSIÓN</span></p>
+    <div class="foro-tabs" id="foro-tabs">
+      <button class="ftab active" data-f="general" onclick="filterForo('general')">General</button>
+    </div>
+    <div class="composer">
+      <div class="comp-ttl">✍️ Deja tu comentario</div>
+      <div class="comp-row">
+        <input class="comp-in" id="c-user" placeholder="Tu nombre o apodo" maxlength="40">
+        <select class="comp-sel" id="c-epoch"><option value="general">General</option></select>
+      </div>
+      <textarea class="comp-ta" id="c-text" placeholder="Comparte una opinión, pregunta o aporte…"></textarea>
+      <button class="btn btn-p" style="font-size:.44rem" onclick="postComment()">Publicar →</button>
+    </div>
+    <div class="comments-list" id="comments-list"><div class="foro-loading">Cargando…</div></div>
+  </div>
+</section>
+
+<!-- ============================================================ PLAY (JUEGO) -->
+<section id="play" class="section">
+  <div class="play-wrap">
+    <div class="play-hdr">
+      <h2>🎮 <span style="color:var(--accent)">TIME TRAVELER</span></h2>
+      <p>Viaja a través del tiempo resolviendo acertijos de cada época</p>
+    </div>
+    <div class="game-container" id="game-container">
+      <!-- El juego Phaser se renderizará aquí -->
+      <div id="game-placeholder" class="game-placeholder">
+        <div class="placeholder-content">
+          <span class="placeholder-icon">🎮</span>
+          <p>Juego cargando...</p>
+          <span class="placeholder-sub">Phaser.js listo para conectar</span>
+        </div>
+      </div>
+    </div>
+    <!-- Controles móviles (solo visible en @media) -->
+    <div class="mobile-controls" id="mobile-controls">
+      <div class="d-pad">
+        <button class="d-btn d-up" id="btn-up">▲</button>
+        <div class="d-middle">
+          <button class="d-btn d-left" id="btn-left">◀</button>
+          <button class="d-btn d-center">●</button>
+          <button class="d-btn d-right" id="btn-right">▶</button>
+        </div>
+        <button class="d-btn d-down" id="btn-down">▼</button>
+      </div>
+      <div class="action-buttons">
+        <button class="action-btn action-a" id="btn-action">A</button>
+      </div>
+    </div>
+    <div class="play-instructions">
+      <div class="inst-card">
+        <h4>🎯 Objetivo</h4>
+        <p>Recorre las diferentes épocas de la historia de la computación</p>
+      </div>
+      <div class="inst-card">
+        <h4>🕹️ Controles</h4>
+        <p>Desktop: WASD o Flechas para moverte, ESPACIO para interactuar</p>
+        <p>Móvil: Usa la rueda direccional en pantalla</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ MATERIALES -->
+<section id="materiales" class="section">
+  <div class="mat-hdr">
+    <h2>📚 MATERIALES <span style="color:var(--accent)">DESCARGABLES</span></h2>
+    <p>Recursos organizados por época. Haz clic en Descargar para acceder.</p>
+  </div>
+  <div class="mat-filters">
+    <button class="mfbtn active" onclick="filterMat('all',this)">Todos</button>
+    <button class="mfbtn" onclick="filterMat('pdf',this)">PDF</button>
+    <button class="mfbtn" onclick="filterMat('video',this)">Video</button>
+    <button class="mfbtn" onclick="filterMat('slides',this)">Slides</button>
+  </div>
+  <div class="mat-grid" id="mat-grid"></div>
+</section>
+
+<!-- ============================================================ FOOTER -->
+<footer>
+  <div class="footer-logo">⏱ CHRÓNIA — VIAJE EN EL TIEMPO</div>
+  <p class="footer-txt">© Jesús Forero - Introducción a la Ingeniería de Software</p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+</body>
+</html>
