@@ -1,7 +1,6 @@
 {
   "name": "viaje-en-el-tiempo",
   "version": "1.0.0",
-  "description": "Ingeniería de Software — Viaje en el Tiempo (Gemini API)",
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
@@ -12,8 +11,5 @@
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.1"
-  },
-  "devDependencies": {
-    "vercel": "^37.0.0"
   }
 }
