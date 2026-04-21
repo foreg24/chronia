@@ -165,9 +165,9 @@ class ExteriorScene extends BaseScene {
         
         // Montañas lejanas
         this.createMountain(100, 300, 0x5a7d3a);
-        this.createMountain(300, 280, 0x4a6d2a);
-        this.createMountain(550, 310, 0x5a7d3a);
-        this.createMountain(720, 290, 0x4a6d2a);
+        this.createMountain(300, 300, 0x4a6d2a);
+        this.createMountain(550, 300, 0x5a7d3a);
+        this.createMountain(720, 300, 0x4a6d2a);
         
         // Suelo de pasto
         const ground = this.add.rectangle(400, 380, 800, 140, 0x3d7a1e);
@@ -221,6 +221,8 @@ class ExteriorScene extends BaseScene {
             tint: 0x00f5ff
         });
         
+        this.physics.world.setBounds(0, 0, 800, 300);
+
         // Diálogo
         this.dialog = this.createDialogBox();
         this.showDialog(this.dialog, 'Bienvenido a tu casa de campo.\nUsa WASD o flechas para moverte.\nAcércate a la puerta y presiona ESPACIO para entrar.');
@@ -237,7 +239,7 @@ class ExteriorScene extends BaseScene {
         });
         
         // Colisiones con límites del mundo
-        this.physics.world.setBounds(0, 0, 800, 450);
+        this.physics.world.setBounds(0, 285, 800, 130);
         
         // Indicador de puerta
         this.doorIndicator = this.add.text(400, 240, '▼ ENTRAR', {
@@ -266,17 +268,16 @@ class ExteriorScene extends BaseScene {
     }
     
     createMountain(x, y, color) {
-        const mountain = this.add.triangle(x, y, 0, 0, 80, 0, 40, -60, color);
-        mountain.setOrigin(0.5, 1);
+        const g = this.add.graphics().setDepth(2);
+        g.fillStyle(color);
+        g.fillTriangle(x - 130, y, x + 130, y, x, y - 130);
     }
     
     createTree(x, y) {
-        // Tronco
-        this.add.rectangle(x, y + 20, 12, 40, 0x8B4513);
-        // Copa
-        this.add.circle(x, y - 10, 35, 0x228B22);
-        this.add.circle(x - 15, y - 5, 25, 0x2E8B57);
-        this.add.circle(x + 15, y - 5, 25, 0x2E8B57);
+        this.add.rectangle(x, y + 20, 12, 40, 0x8B4513).setDepth(3);
+        this.add.circle(x, y - 10, 35, 0x228B22).setDepth(3);
+        this.add.circle(x - 15, y - 5, 25, 0x2E8B57).setDepth(3);
+        this.add.circle(x + 15, y - 5, 25, 0x2E8B57).setDepth(3);
     }
     
     createFlower(x, y) {
@@ -289,33 +290,33 @@ class ExteriorScene extends BaseScene {
         // Base de la casa
         const base = this.add.rectangle(x, y, 140, 100, 0xD2B48C);
         base.setStrokeStyle(2, 0x8B7355);
+        base.setDepth(5);
         
-        // Techo
-        const roof = this.add.triangle(x, y - 50, -80, 0, 80, 0, 0, -50, 0x8B4513);
-        roof.setStrokeStyle(2, 0x654321);
+        // Techo — pegado justo encima de la base
+        const g = this.add.graphics().setDepth(5);
+        g.fillStyle(0x8B4513);
+        g.fillTriangle(x - 85, y - 50, x + 85, y - 50, x, y - 110);
+        g.lineStyle(2, 0x654321);
+        g.strokeTriangle(x - 85, y - 50, x + 85, y - 50, x, y - 110);
+        
+        // Chimenea (encima del techo)
+        this.add.rectangle(x + 40, y - 95, 18, 30, 0x8B4513).setDepth(6);
+        this.createSmoke(x + 40, y - 112);
         
         // Puerta
-        const door = this.add.rectangle(x, y + 20, 30, 50, 0x654321);
-        door.setStrokeStyle(2, 0x4a3728);
-        
-        // Manija de la puerta
-        this.add.circle(x + 10, y + 20, 3, 0xFFD700);
+        this.add.rectangle(x, y + 20, 30, 50, 0x654321).setStrokeStyle(2, 0x4a3728).setDepth(6);
+        this.add.circle(x + 10, y + 20, 3, 0xFFD700).setDepth(6);
         
         // Ventanas
-        const window1 = this.add.rectangle(x - 35, y - 10, 30, 30, 0x87CEEB);
-        window1.setStrokeStyle(2, 0x8B7355);
-        this.add.rectangle(x - 35, y - 10, 30, 2, 0x8B7355);
-        this.add.rectangle(x - 35, y - 10, 2, 30, 0x8B7355);
+        const w1 = this.add.rectangle(x - 35, y - 10, 30, 30, 0x87CEEB).setDepth(6);
+        w1.setStrokeStyle(2, 0x8B7355);
+        this.add.rectangle(x - 35, y - 10, 30, 2, 0x8B7355).setDepth(6);
+        this.add.rectangle(x - 35, y - 10, 2, 30, 0x8B7355).setDepth(6);
         
-        const window2 = this.add.rectangle(x + 35, y - 10, 30, 30, 0x87CEEB);
-        window2.setStrokeStyle(2, 0x8B7355);
-        this.add.rectangle(x + 35, y - 10, 30, 2, 0x8B7355);
-        this.add.rectangle(x + 35, y - 10, 2, 30, 0x8B7355);
-        
-        // Chimenea
-        const chimney = this.add.rectangle(x + 45, y - 45, 20, 30, 0x8B4513);
-        // Humo
-        this.createSmoke(x + 45, y - 65);
+        const w2 = this.add.rectangle(x + 35, y - 10, 30, 30, 0x87CEEB).setDepth(6);
+        w2.setStrokeStyle(2, 0x8B7355);
+        this.add.rectangle(x + 35, y - 10, 30, 2, 0x8B7355).setDepth(6);
+        this.add.rectangle(x + 35, y - 10, 2, 30, 0x8B7355).setDepth(6);
         
         // Macetas
         this.createPot(x - 50, y + 45);
@@ -476,7 +477,7 @@ class CasaScene extends BaseScene {
             fontSize: '12px',
             color: '#00f5ff'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
-        
+
         // Jugador
         this.player = this.createPlayer(400, 350);
         
@@ -494,12 +495,12 @@ class CasaScene extends BaseScene {
             tint: 0x00f5ff,
             alpha: { start: 0.5, end: 0 }
         });
-        
+
         // Diálogo
         this.dialog = this.createDialogBox();
-        this.showDialog(this.dialog, 'Esta es tu casa. Hay algo extraño\nen esa estantería del fondo...\nInvestiga la pared izquierda.');
+        this.showDialog(this.dialog, 'Esta es tu casa. Hay algo extraño\nen esa puerta de la izquierda...\nAcércate y presiona ESPACIO.');
         this.dialogShown = true;
-        
+
         // Controles
         this.cursors = this.input.keyboard.createCursorKeys();
         this.wasd = this.input.keyboard.addKeys({
@@ -675,39 +676,39 @@ class FuturisticScene extends BaseScene {
     }
     
     create() {
-        this.cameras.main.setBackgroundColor('#0a0a1a');
-        
-        // Suelo metálico con grid
-        const floor = this.add.rectangle(400, 350, 800, 200, 0x151525);
-        for (let x = 0; x < 800; x += 50) {
-            this.add.line(x, 250, 0, 0, 0, 200, 0x00f5ff, 0.1);
+        this.cameras.main.setBackgroundColor('#050510');
+
+        // Pared trasera futurista
+        this.add.rectangle(400, 110, 800, 220, 0x0d0d20);
+        this.add.rectangle(400, 220, 800, 3, 0x00f5ff);
+
+        // Grid del suelo
+        for (let x = 0; x <= 800; x += 50) {
+            this.add.line(x, 335, 0, 0, 0, 220, 0x00f5ff, 0.08);
         }
-        for (let y = 250; y < 450; y += 50) {
-            this.add.line(0, y, 0, 0, 800, 0, 0x00f5ff, 0.1);
+        for (let y = 220; y <= 450; y += 40) {
+            this.add.line(400, y, -400, 0, 400, 0, 0x00f5ff, 0.08);
         }
-        
-        // Paredes futuristas
-        const wall = this.add.rectangle(400, 100, 800, 200, 0x0f0f1f);
-        wall.setStrokeStyle(2, 0x00f5ff);
-        
-        // Luces de neón en las paredes
-        this.createNeonLight(150, 80);
-        this.createNeonLight(650, 80);
-        this.createNeonLight(400, 50);
-        
-        // Consolas futuristas
-        this.createConsole(150, 200);
-        this.createConsole(650, 200);
-        
-        // Pantallas holográficas
-        this.createHologram(150, 150, 'DATOS TEMPORALES');
-        this.createHologram(650, 150, 'COORDENADAS');
-        
-        // LA MÁQUINA DEL TIEMPO
-        this.createTimeMachine(400, 200);
-        
-        // Efectos de partículas alrededor de la máquina
-        this.timeMachineParticles = this.add.particles(400, 180, 'particle', {
+
+        // Suelo base
+        this.add.rectangle(400, 340, 800, 230, 0x0a0a18);
+
+        // Luces de neón en pared
+        this.createNeonLight(160, 75);
+        this.createNeonLight(640, 75);
+        this.createNeonLight(400, 45);
+
+        // Consolas + hologramas a los lados
+        this.createConsole(160, 215);
+        this.createConsole(640, 215);
+        this.createHologram(160, 155, 'DATOS TEMPORALES');
+        this.createHologram(640, 155, 'COORDENADAS');
+
+        // Máquina del tiempo centrada, más abajo
+        this.createTimeMachine(400, 230);
+
+        // Partículas
+        this.timeMachineParticles = this.add.particles(400, 210, 'particle', {
             speed: { min: 20, max: 60 },
             scale: { start: 0.5, end: 0 },
             lifespan: 1000,
@@ -716,26 +717,25 @@ class FuturisticScene extends BaseScene {
             tint: 0x00f5ff,
             blendMode: 'ADD'
         });
-        
+
         // Jugador
-        this.player = this.createPlayer(400, 350);
-        
-        // Zona de interacción con la máquina
-        this.machineZone = this.add.rectangle(400, 200, 80, 80, 0x00f5ff, 0);
+        this.player = this.createPlayer(400, 370);
+
+        // Zona de interacción
+        this.machineZone = this.add.rectangle(400, 230, 80, 80, 0x00f5ff, 0);
         this.physics.add.existing(this.machineZone, true);
-        
-        // Indicador
-        this.machineIndicator = this.add.text(400, 140, '▼ ACTIVAR MÁQUINA', {
+
+        this.machineIndicator = this.add.text(400, 155, '▼ ACTIVAR MÁQUINA', {
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: '8px',
+            fontSize: '7px',
             color: '#00f5ff'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
-        
+
         // Diálogo
         this.dialog = this.createDialogBox();
-        this.showDialog(this.dialog, '¡Increíble! Una habitación futurista\ncon una máquina del tiempo real.\nAcércate y presiona ESPACIO para activarla.');
+        this.showDialog(this.dialog, '¡Increíble! Una máquina del tiempo real.\nAcércate y presiona ESPACIO para activarla.');
         this.dialogShown = true;
-        
+
         // Controles
         this.cursors = this.input.keyboard.createCursorKeys();
         this.wasd = this.input.keyboard.addKeys({
@@ -745,10 +745,20 @@ class FuturisticScene extends BaseScene {
             right: Phaser.Input.Keyboard.KeyCodes.D,
             space: Phaser.Input.Keyboard.KeyCodes.SPACE
         });
-        
-        this.physics.world.setBounds(100, 220, 600, 200);
-        
-        // Animación de entrada con efecto de "teletransporte"
+
+        this.physics.world.setBounds(30, 225, 740, 210);
+
+        this.createScanlineEffect();
+
+        // Salida
+        this.exitZone = this.add.rectangle(400, 435, 80, 20, 0xff0000, 0);
+        this.physics.add.existing(this.exitZone, true);
+        this.exitIndicator = this.add.text(400, 415, '▼ VOLVER', {
+            fontFamily: '"Press Start 2P", monospace',
+            fontSize: '8px',
+            color: '#ff6b35'
+        }).setOrigin(0.5).setVisible(false).setDepth(20);
+
         this.cameras.main.fadeIn(500);
         
         // Efecto de scanline
@@ -1043,46 +1053,45 @@ class EpochSelectorScene extends BaseScene {
         this.createStarfield();
         
         // Título
-        const title = this.add.text(400, 40, 'SELECCIONA UNA ÉPOCA', {
+        const title = this.add.text(400, 22, 'SELECCIONA UNA ÉPOCA', {
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: '16px',
+            fontSize: '13px',
             color: '#00f5ff',
             align: 'center'
         }).setOrigin(0.5);
         title.setShadow(0, 0, '#00f5ff', 10);
-        
-        // Subtítulo
-        this.add.text(400, 70, 'Viaja a través del tiempo', {
+
+        this.add.text(400, 48, 'Viaja a través del tiempo', {
             fontFamily: '"VT323", monospace',
-            fontSize: '18px',
+            fontSize: '16px',
             color: '#8892a4'
         }).setOrigin(0.5);
         
-        // Crear tarjetas de épocas
+        // Grid de tarjetas — 4 cols, 2 filas, centrado
         this.epochCards = [];
         const cols = 4;
-        const startX = 150;
+        const cardW = 165;
+        const cardH = 105;
+        const gapX = 180;
+        const gapY = 120;
+        const startX = 400 - gapX * 1.5;
         const startY = 130;
-        const gapX = 170;
-        const gapY = 140;
-        
+
         EPOCHS_DATA.forEach((epoch, index) => {
             const col = index % cols;
             const row = Math.floor(index / cols);
             const x = startX + col * gapX;
             const y = startY + row * gapY;
-            
-            const card = this.createEpochCard(x, y, epoch, index);
-            this.epochCards.push(card);
+            this.epochCards.push(this.createEpochCard(x, y, epoch, index, cardW, cardH));
         });
-        
-        // Máquina del tiempo en el centro inferior
-        this.createReturnMachine(400, 400);
-        
+
+        // Máquina del tiempo
+        this.createReturnMachine(400, 375);
+
         // Instrucciones
-        this.add.text(400, 440, 'CLICK en una época para viajar  |  CLICK en la máquina para volver', {
+        this.add.text(400, 438, 'CLICK época para viajar  ·  CLICK máquina para volver', {
             fontFamily: '"Share Tech Mono", monospace',
-            fontSize: '12px',
+            fontSize: '8px',
             color: '#4a5568'
         }).setOrigin(0.5);
         
@@ -1113,50 +1122,43 @@ class EpochSelectorScene extends BaseScene {
         }
     }
     
-    createEpochCard(x, y, epoch, index) {
+    createEpochCard(x, y, epoch, index, cardW = 165, cardH = 105) {
         const container = this.add.container(x, y);
-        
-        // Fondo de la tarjeta
-        const bg = this.add.rectangle(0, 0, 150, 110, 0x0a0a1a);
+
+        const bg = this.add.rectangle(0, 0, cardW, cardH, 0x0a0a1a);
         bg.setStrokeStyle(2, parseInt(epoch.color.replace('#', '0x')));
         bg.setInteractive({ useHandCursor: true });
         container.add(bg);
-        
-        // Glow
-        const glow = this.add.rectangle(0, 0, 150, 110, parseInt(epoch.color.replace('#', '0x')), 0.1);
+
+        const glow = this.add.rectangle(0, 0, cardW, cardH, parseInt(epoch.color.replace('#', '0x')), 0.1);
         glow.setBlendMode('ADD');
         container.add(glow);
-        
-        // Icono
-        const icon = this.add.text(0, -25, epoch.icon, {
-            fontSize: '28px'
-        }).setOrigin(0.5);
+
+        const icon = this.add.text(0, -28, epoch.icon, { fontSize: '20px' }).setOrigin(0.5);
         container.add(icon);
-        
-        // Nombre
-        const name = this.add.text(0, 5, epoch.name, {
+
+        const name = this.add.text(0, -6, epoch.name, {
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: '8px',
+            fontSize: '7px',
             color: epoch.color,
-            align: 'center'
+            align: 'center',
+            wordWrap: { width: cardW - 20 }
         }).setOrigin(0.5);
         container.add(name);
-        
-        // Período
-        const period = this.add.text(0, 22, epoch.period, {
+
+        const period = this.add.text(0, 16, epoch.period, {
             fontFamily: '"Share Tech Mono", monospace',
-            fontSize: '9px',
+            fontSize: '8px',
             color: '#4a5568'
         }).setOrigin(0.5);
         container.add(period);
-        
-        // Descripción breve
-        const desc = this.add.text(0, 38, epoch.desc, {
+
+        const desc = this.add.text(0, 33, epoch.desc, {
             fontFamily: '"VT323", monospace',
-            fontSize: '10px',
+            fontSize: '11px',
             color: '#8892a4',
             align: 'center',
-            wordWrap: { width: 130 }
+            wordWrap: { width: cardW - 15 }
         }).setOrigin(0.5);
         container.add(desc);
         
