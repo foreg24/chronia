@@ -1333,18 +1333,32 @@ function drawConns() {
    NAVEGACIÓN
    ============================================================= */
 function nav(id) {
-  document.querySelectorAll('.section').forEach(s => { s.classList.remove('active'); s.style.display='none'; });
+  document.querySelectorAll('.section').forEach(s => { 
+    s.classList.remove('active'); 
+    s.style.display = 'none'; 
+  });
   const t = document.getElementById(id);
   if (!t) return;
-  t.style.display = id==='home' ? 'flex' : 'block';
-  void t.offsetWidth; t.classList.add('active');
-  window.scrollTo(0,0);
-  document.querySelectorAll('.nav-links a').forEach(a => a.classList.toggle('active', a.dataset.s===id));
+  t.style.display = id === 'home' ? 'flex' : 'block';
+  void t.offsetWidth; 
+  t.classList.add('active');
+  window.scrollTo(0, 0);
+  
+  document.querySelectorAll('.nav-links a').forEach(a => 
+    a.classList.toggle('active', a.dataset.s === id)
+  );
   document.getElementById('nav-links-pill').classList.remove('open');
   document.getElementById('burger').classList.remove('open');
-  if (id==='foro') loadForo();
-  if (id==='play') initGame();
-  else destroyGame();
+  
+  if (id === 'foro') loadForo();
+  
+  // CORREGIDO: Solo inicializar juego cuando se hace clic en Play
+  // PERO no iniciarlo automáticamente — esperar a que el usuario pulse "Entrar al mundo"
+  if (id === 'play') {
+    // No hacer nada — el juego se inicia con startGame()
+  } else {
+    destroyGame();
+  }
   
   if (id === 'home') {
     drawStarsBg();
@@ -1670,50 +1684,92 @@ function filterMat(type, btn) {
 /* =============================================================
    JUEGO — Zona Play (Phaser se conecta aquí)
    ============================================================= */
+/* =============================================================
+   JUEGO — Integración Phaser Time Traveler RPG
+   ============================================================= */
+function startGame() {
+  initGame();
+
+  // Bloquear scroll de la página con WASD/flechas solo mientras el juego está activo
+  window._gameKeyHandler = function(e) {
+    const gameCodes = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',
+                       'KeyW','KeyA','KeyS','KeyD','Space'];
+    if (gameCodes.includes(e.code)) e.preventDefault();
+  };
+  window.addEventListener('keydown', window._gameKeyHandler, { passive: false });
+
+  // Dar foco al canvas de Phaser tras un pequeño delay
+  setTimeout(() => {
+    const canvas = document.querySelector('#game-container canvas');
+    if (canvas) {
+      canvas.setAttribute('tabindex', '0');
+      canvas.focus();
+    }
+  }, 500);
+}
+
 function initGame() {
-  // Si ya hay una instancia corriendo, no crear otra
   if (gameInstance) return;
- 
-  const placeholder = document.getElementById('game-placeholder');
-  if (placeholder) placeholder.style.display = 'none';
- 
-  /* ── Aquí conectarás tu archivo de juego Phaser ──
-     Cuando tengas el juego listo, importa tu escena y haz:
- 
-     gameInstance = new Phaser.Game({
-       type: Phaser.AUTO,
-       width: 800,
-       height: 450,
-       parent: 'game-container',
-       backgroundColor: '#07080f',
-       pixelArt: true,
-       scene: [TuEscena],
-       physics: { default: 'arcade', arcade: { gravity: { y: 300 } } }
-     });
- 
-     Por ahora mostramos el placeholder animado:
-  ── */
- 
-  if (!window.Phaser) {
+
+  if (typeof Phaser === 'undefined') {
     showGamePlaceholder('Phaser no cargó. Verifica la conexión.');
     return;
   }
- 
-  // Placeholder interactivo mientras no hay escena real
-  showGamePlaceholder();
+  if (typeof ExteriorScene === 'undefined') {
+    showGamePlaceholder('El archivo phaser.js no se cargó correctamente.');
+    return;
+  }
+
+  const placeholder = document.getElementById('game-placeholder');
+  if (placeholder) placeholder.style.display = 'none';
+
+  gameInstance = new Phaser.Game({
+    type: Phaser.AUTO,
+    width: 800,
+    height: 450,
+    parent: 'game-container',
+    backgroundColor: '#1a1a2e',
+    pixelArt: true,
+    physics: {
+      default: 'arcade',
+      arcade: { gravity: { y: 0 }, debug: false }
+    },
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      parent: 'game-container',
+      width: 800,
+      height: 450,
+    },
+    scene: [
+      ExteriorScene,
+      CasaScene,
+      FuturisticScene,
+      EpochSelectorScene,
+      EpochScene
+    ]
+  });
+
+  setupMobileControls();
 }
- 
+
 function showGamePlaceholder(msg) {
   const ph = document.getElementById('game-placeholder');
   if (!ph) return;
   ph.style.display = 'flex';
   if (msg) {
     ph.querySelector('p').textContent = msg;
-    ph.querySelector('.placeholder-sub').textContent = '';
+    const sub = ph.querySelector('.placeholder-sub');
+    if (sub) sub.textContent = '';
   }
 }
- 
+
 function destroyGame() {
+  // Quitar el listener de teclado del juego al salir
+  if (window._gameKeyHandler) {
+    window.removeEventListener('keydown', window._gameKeyHandler);
+    window._gameKeyHandler = null;
+  }
   if (gameInstance) {
     gameInstance.destroy(true);
     gameInstance = null;
@@ -1721,30 +1777,87 @@ function destroyGame() {
   const ph = document.getElementById('game-placeholder');
   if (ph) ph.style.display = 'flex';
 }
- 
-/* Controles móviles del D-Pad — expone eventos para que Phaser los lea */
+
+/* =============================================================
+   CONTROLES MÓVILES — Conectados al juego Phaser
+   ============================================================= */
 function initMobileControls() {
-  const map = {
-    'btn-up':    'ArrowUp',
-    'btn-down':  'ArrowDown',
-    'btn-left':  'ArrowLeft',
-    'btn-right': 'ArrowRight',
-    'btn-action':'Space',
+  // Los controles móviles se inicializan cuando se crea el juego
+  // Ver initGame() -> setupMobileControls()
+}
+
+function setupMobileControls() {
+  // Mapeo de botones del D-Pad a teclas del juego
+  const keyMap = {
+    'btn-up':    { key: 'UP',    code: 'ArrowUp' },
+    'btn-down':  { key: 'DOWN',  code: 'ArrowDown' },
+    'btn-left':  { key: 'LEFT',  code: 'ArrowLeft' },
+    'btn-right': { key: 'RIGHT', code: 'ArrowRight' },
+    'btn-action':{ key: 'SPACE', code: 'Space' }
   };
- 
-  Object.entries(map).forEach(([btnId, key]) => {
+
+  Object.entries(keyMap).forEach(([btnId, keyData]) => {
     const el = document.getElementById(btnId);
     if (!el) return;
- 
-    const fire = (type) => {
-      window.dispatchEvent(new KeyboardEvent(type, {key, code: key, bubbles: true}));
+
+    const dispatchKey = (type) => {
+      // Crear evento de teclado que Phaser pueda capturar
+      const event = new KeyboardEvent(type, {
+        key: keyData.key,
+        code: keyData.code,
+        keyCode: getKeyCode(keyData.key),
+        which: getKeyCode(keyData.key),
+        bubbles: true,
+        cancelable: true
+      });
+      
+      // Disparar en el canvas del juego si existe
+      const canvas = document.querySelector('#game-container canvas');
+      if (canvas) {
+        canvas.dispatchEvent(event);
+      }
+      // También en window como fallback
+      window.dispatchEvent(event);
     };
- 
-    el.addEventListener('touchstart', e => { e.preventDefault(); fire('keydown'); playSfx('click'); }, {passive:false});
-    el.addEventListener('touchend',   e => { e.preventDefault(); fire('keyup');   }, {passive:false});
-    el.addEventListener('mousedown',  () => fire('keydown'));
-    el.addEventListener('mouseup',    () => fire('keyup'));
+
+    // Touch events (móvil)
+    el.addEventListener('touchstart', (e) => { 
+      e.preventDefault(); 
+      dispatchKey('keydown'); 
+      el.classList.add('pressed');
+      playSfx('click'); 
+    }, { passive: false });
+    
+    el.addEventListener('touchend', (e) => { 
+      e.preventDefault(); 
+      dispatchKey('keyup'); 
+      el.classList.remove('pressed');
+    }, { passive: false });
+
+    // Mouse events (desktop testing)
+    el.addEventListener('mousedown', () => { 
+      dispatchKey('keydown'); 
+      el.classList.add('pressed');
+    });
+    
+    el.addEventListener('mouseup', () => { 
+      dispatchKey('keyup'); 
+      el.classList.remove('pressed');
+    });
+    
+    el.addEventListener('mouseleave', () => { 
+      dispatchKey('keyup'); 
+      el.classList.remove('pressed');
+    });
   });
+}
+
+function getKeyCode(key) {
+  const codes = {
+    'UP': 38, 'DOWN': 40, 'LEFT': 37, 'RIGHT': 39, 'SPACE': 32,
+    'ArrowUp': 38, 'ArrowDown': 40, 'ArrowLeft': 37, 'ArrowRight': 39, 'Space': 32
+  };
+  return codes[key] || 0;
 }
  
 /* =============================================================

@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Por Desocupe 123</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="scripts.js"></script>
   <!-- Phaser para el juego -->
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
-</head>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+  <!-- Tu juego Phaser -->
+  <script src="phaser.js"></script>
+  <script src="scripts.js" defer></script>
 <body>
 
 <canvas id="bg-canvas"></canvas>
@@ -180,12 +181,13 @@
       <p>Viaja a través del tiempo resolviendo acertijos de cada época</p>
     </div>
     <div class="game-container" id="game-container">
-      <!-- El juego Phaser se renderizará aquí -->
       <div id="game-placeholder" class="game-placeholder">
         <div class="placeholder-content">
           <span class="placeholder-icon">🎮</span>
-          <p>Juego cargando...</p>
-          <span class="placeholder-sub">Phaser.js listo para conectar</span>
+          <p>Time Traveler RPG</p>
+          <span class="placeholder-sub">Viaja por las épocas de la historia del software</span>
+          <p></p>
+          <button class="start-game-btn" onclick="startGame()">▶ INICIAR JUEGO</button>
         </div>
       </div>
     </div>

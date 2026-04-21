@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-const { GoogleGenAI } = require('@google/genai');
+const Groq = require('groq-sdk');
 
 const app = express();
 
@@ -13,45 +13,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Servir archivos estáticos desde /public
-// ============================================================
-// SERVIR ESTÁTICOS (solo en localhost)
-// ============================================================
-
-// En Vercel, los archivos en /public se sirven automáticamente
-// Solo configuramos estáticos manualmente para desarrollo local
+// Servir archivos estáticos (solo en localhost)
 if (!process.env.VERCEL) {
   app.use(express.static(path.join(__dirname, '..', 'public')));
-  
-  // Fallback para SPA: cualquier ruta no-API sirve index.html
   app.get('*', (req, res) => {
-    // No servir fallback para rutas API
     if (req.path.startsWith('/api/')) return;
     res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
   });
 }
 
-// Inicializar Gemini
-let genAI;
+// Inicializar Groq
+let groq;
 try {
-  genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  console.log('✅ Cliente Gemini inicializado');
+  groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  console.log('✅ Cliente Groq inicializado');
 } catch (err) {
-  console.error('❌ Error Gemini:', err.message);
+  console.error('❌ Error Groq:', err.message);
 }
 
-// Base de datos (en /tmp para Vercel, local para desarrollo)
+// Base de datos
 const isVercel = process.env.VERCEL === '1';
 const DB_PATH = isVercel 
   ? path.join('/tmp', 'foro-db.json')
   : path.join(__dirname, '..', 'backend', 'database', 'foro-db.json');
 
-// Asegurar que existe el directorio local
 if (!isVercel) {
   const dbDir = path.dirname(DB_PATH);
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
+  if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 }
 
 function readDB() {
@@ -66,73 +54,86 @@ function writeDB(data) {
 }
 
 // ============================================================
-// RUTAS API COMPLETAS (copia tu lógica de server.js original)
+// RUTAS API
 // ============================================================
 
 app.post('/api/chat', async (req, res) => {
   const { messages, system } = req.body;
 
-  if (!process.env.GEMINI_API_KEY) {
+  if (!process.env.GROQ_API_KEY) {
     return res.status(500).json({ 
-      error: 'Falta GEMINI_API_KEY en .env',
-      hint: 'Crea un archivo .env con: GEMINI_API_KEY=tu_clave'
+      error: 'Falta GROQ_API_KEY en .env',
+      hint: 'Crea un archivo .env con: GROQ_API_KEY=tu_clave'
     });
   }
 
-  if (!genAI) {
+  if (!groq) {
     return res.status(500).json({ 
-      error: 'Cliente Gemini no inicializado correctamente' 
+      error: 'Cliente Groq no inicializado correctamente' 
     });
   }
 
   try {
-    const geminiContents = messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : m.role,
-      parts: [{ text: m.content }]
-    }));
-
-    const modelName = 'gemini-2.5-flash';
-
-    console.log(`[Gemini] Enviando ${geminiContents.length} mensajes al modelo ${modelName}`);
-
-    const result = await genAI.models.generateContent({
-      model: modelName,
-      contents: geminiContents,
-      config: {
-        systemInstruction: system || '',
-        maxOutputTokens: 1024,
-        temperature: 0.7,
-      },
+    // Convertir mensajes al formato OpenAI/Groq
+    const groqMessages = [];
+    
+    // System prompt como primer mensaje
+    if (system) {
+      groqMessages.push({ role: 'system', content: system });
+    }
+    
+    // Mapear historial: 'assistant' → 'assistant', 'user' → 'user'
+    messages.forEach(m => {
+      groqMessages.push({
+        role: m.role === 'assistant' ? 'assistant' : m.role,
+        content: m.content
+      });
     });
 
-    const reply = result.text || '';
+    const modelName = 'llama-3.3-70b-versatile';
+    // Alternativas disponibles en Groq:
+    // 'llama-3.1-8b-instant'      (más rápido, más barato)
+    // 'llama-3.3-70b-versatile'   (recomendado, buen balance)
+    // 'meta-llama/llama-4-scout-17b-16e-instruct' (más reciente)
+
+    console.log(`[Groq] Enviando ${groqMessages.length} mensajes al modelo ${modelName}`);
+
+    const completion = await groq.chat.completions.create({
+      messages: groqMessages,
+      model: modelName,
+      temperature: 0.7,
+      max_tokens: 1024,
+      top_p: 1,
+    });
+
+    const reply = completion.choices[0]?.message?.content || '';
 
     if (!reply) {
-      console.error('[Gemini] Respuesta vacía:', result);
-      return res.status(500).json({ error: 'Respuesta vacía de Gemini' });
+      console.error('[Groq] Respuesta vacía:', completion);
+      return res.status(500).json({ error: 'Respuesta vacía de Groq' });
     }
 
-    console.log(`[Gemini] Respuesta recibida (${reply.length} chars)`);
+    console.log(`[Groq] Respuesta recibida (${reply.length} chars)`);
     res.json({ reply });
 
   } catch (err) {
     console.error('[/api/chat] Error:', err);
     
-    if (err.message?.includes('API key not valid')) {
+    if (err.status === 401 || err.message?.includes('auth')) {
       return res.status(401).json({ 
-        error: 'API key inválida. Verifica tu GEMINI_API_KEY en .env',
+        error: 'API key inválida. Verifica tu GROQ_API_KEY en .env',
         details: err.message 
       });
     }
     
-    if (err.message?.includes('quota') || err.status === 429) {
+    if (err.status === 429 || err.message?.includes('rate limit')) {
       return res.status(429).json({ 
-        error: 'Límite de uso gratuito alcanzado. Intenta más tarde.',
+        error: 'Límite de uso alcanzado. Intenta más tarde.',
         details: err.message 
       });
     }
 
-    if (err.message?.includes('model')) {
+    if (err.status === 404 || err.message?.includes('model')) {
       return res.status(400).json({ 
         error: 'Modelo no encontrado o no disponible.',
         details: err.message 
@@ -140,7 +141,7 @@ app.post('/api/chat', async (req, res) => {
     }
     
     res.status(500).json({ 
-      error: 'Error conectando con Gemini',
+      error: 'Error conectando con Groq',
       details: err.message
     });
   }
@@ -177,10 +178,7 @@ app.post('/api/foro', (req, res) => {
   };
   
   db.comments.unshift(comment);
-  
-  if (db.comments.length > 500) {
-    db.comments = db.comments.slice(0, 500);
-  }
+  if (db.comments.length > 500) db.comments = db.comments.slice(0, 500);
   
   writeDB(db);
   res.json(comment);
@@ -196,33 +194,31 @@ app.delete('/api/foro/:id', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
-    geminiConfigured: !!process.env.GEMINI_API_KEY,
+    groqConfigured: !!process.env.GROQ_API_KEY,
     timestamp: new Date().toISOString()
   });
 });
 
 // ============================================================
-// MODO LOCAL: app.listen() | MODO VERCEL: module.exports
+// MODO LOCAL
 // ============================================================
 
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  // Modo desarrollo local - servidor tradicional
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`\n🚀 Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📁 Base de datos: ${DB_PATH}`);
-    console.log(`🤖 Gemini API:    http://localhost:${PORT}/api/chat`);
+    console.log(`🤖 Groq API:      http://localhost:${PORT}/api/chat`);
     console.log(`💬 Foro:          http://localhost:${PORT}/api/foro`);
     console.log(`🔍 Health check:  http://localhost:${PORT}/api/health\n`);
     
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn('⚠️  ADVERTENCIA: No se encontró GEMINI_API_KEY');
-      console.warn('   Crea un archivo .env con: GEMINI_API_KEY=tu_clave_aqui\n');
+    if (!process.env.GROQ_API_KEY) {
+      console.warn('⚠️  ADVERTENCIA: No se encontró GROQ_API_KEY');
+      console.warn('   Crea un archivo .env con: GROQ_API_KEY=gsk_...\n');
     } else {
-      console.log('✅ GEMINI_API_KEY configurada');
+      console.log('✅ GROQ_API_KEY configurada');
     }
   });
 }
 
-// Exportar para Vercel (siempre debe estar al final)
 module.exports = app;

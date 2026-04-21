@@ -7,9 +7,9 @@
     "dev": "vercel dev"
   },
   "dependencies": {
-    "@google/genai": "^0.7.0",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
-    "express": "^4.22.1"
+    "express": "^4.22.1",
+    "groq-sdk": "^0.15.0"
   }
 }
