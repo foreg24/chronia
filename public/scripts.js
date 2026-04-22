@@ -120,7 +120,11 @@ let audioCtx     = null;
 /* =============================================================
    SISTEMA DE AUDIO MEJORADO
    ============================================================= */
+/* =============================================================
+   SISTEMA DE AUDIO MEJORADO
+   ============================================================= */
 let musicSequence = null;
+let bgGain = null;
 let musicEnabled = false;
 
 function createChiptuneNote(freq, time, duration, type = 'square', vol = 0.06) {
@@ -159,69 +163,92 @@ function createChiptuneNote(freq, time, duration, type = 'square', vol = 0.06) {
   
   osc.start(time);
   osc.stop(time + duration);
+  
+  // Cleanup de nodos LFO para evitar memory leaks
+  lfo.onended = () => {
+    lfo.disconnect();
+    lfoGain.disconnect();
+  };
 }
 
-function initBackgroundMusic() {
+async function initBackgroundMusic() {
   if (musicSequence) return;
-  
+
   const ctx = getAudioCtx();
   
-  // Melodía estilo C418 / Minecraft "aria math"
-  const leadMelody = [
-    {n: 369.99, d: 0.6}, {n: 440.00, d: 0.6}, {n: 554.37, d: 0.6}, {n: 659.25, d: 0.6},
-    {n: 554.37, d: 0.6}, {n: 440.00, d: 0.6}, {n: 369.99, d: 0.6}, {n: 329.63, d: 1.2},
-    {n: 369.99, d: 0.6}, {n: 440.00, d: 0.6}, {n: 554.37, d: 0.6}, {n: 739.99, d: 0.6},
-    {n: 659.25, d: 0.6}, {n: 554.37, d: 0.6}, {n: 493.88, d: 0.6}, {n: 440.00, d: 1.2},
-    {n: 493.88, d: 0.6}, {n: 554.37, d: 0.6}, {n: 659.25, d: 0.6}, {n: 739.99, d: 0.6},
-    {n: 659.25, d: 0.6}, {n: 554.37, d: 0.6}, {n: 493.88, d: 0.6}, {n: 440.00, d: 1.2},
-  ];
-  
-  const bassMelody = [
-    {n: 184.99, d: 1.2}, {n: 220.00, d: 1.2}, {n: 277.18, d: 1.2}, {n: 329.63, d: 2.4},
-    {n: 184.99, d: 1.2}, {n: 220.00, d: 1.2}, {n: 277.18, d: 1.2}, {n: 220.00, d: 2.4},
-    {n: 246.94, d: 1.2}, {n: 277.18, d: 1.2}, {n: 329.63, d: 1.2}, {n: 369.99, d: 2.4},
-  ];
-  
-  let leadIndex = 0;
-  let bassIndex = 0;
-  let nextLeadTime = ctx.currentTime + 0.1;
-  let nextBassTime = ctx.currentTime + 0.1;
-  
-  function scheduleNotes() {
-    if (!musicEnabled) return;
-    
-    while (nextLeadTime < ctx.currentTime + 0.5) {
-      const note = leadMelody[leadIndex % leadMelody.length];
-      createChiptuneNote(note.n, nextLeadTime, note.d, 'square', 0.05);
-      nextLeadTime += note.d;
-      leadIndex++;
-    }
-    
-    while (nextBassTime < ctx.currentTime + 0.5) {
-      const note = bassMelody[bassIndex % bassMelody.length];
-      createChiptuneNote(note.n, nextBassTime, note.d, 'triangle', 0.1);
-      nextBassTime += note.d;
-      bassIndex++;
-    }
-    
-    musicSequence = setTimeout(scheduleNotes, 100);
+  // Resume AudioContext si está suspendido (requerido en Chrome/Safari)
+  if (ctx.state === 'suspended') {
+    await ctx.resume();
   }
-  
-  musicSequence = setTimeout(scheduleNotes, 100);
+
+  try {
+    const res = await fetch("assets/bgMusic-chronia.mp3");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.arrayBuffer();
+    const buffer = await ctx.decodeAudioData(data);
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.2;
+
+    source.connect(gain);
+    gain.connect(ctx.destination);
+
+    source.start(0, 4);
+
+    musicSequence = source;
+    bgGain = gain;
+    
+    // Cuando termine (aunque sea loop, por si se detiene el loop)
+    source.onended = () => {
+      source.disconnect();
+      gain.disconnect();
+    };
+    
+  } catch (err) {
+    console.error('Error cargando música:', err);
+    toast('No se pudo cargar la música', 'error');
+  }
 }
 
 function stopBackgroundMusic() {
-  if (musicSequence) {
-    clearTimeout(musicSequence);
-    musicSequence = null;
+  if (musicSequence && bgGain) {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    
+    // Fade out suave en lugar de clearTimeout (que no funciona con AudioNodes)
+    bgGain.gain.cancelScheduledValues(now);
+    bgGain.gain.setValueAtTime(bgGain.gain.value, now);
+    bgGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    
+    // Detener la fuente después del fade
+    musicSequence.stop(now + 0.6);
+    
+    // Cleanup
+    setTimeout(() => {
+      if (musicSequence) {
+        musicSequence.disconnect();
+        musicSequence = null;
+      }
+      if (bgGain) {
+        bgGain.disconnect();
+        bgGain = null;
+      }
+    }, 700);
   }
 }
 
 function toggleMusic() {
   musicEnabled = !musicEnabled;
   const btn = document.getElementById('music-control');
-  btn.textContent = musicEnabled ? '🎵' : '🔇';
-  btn.classList.toggle('muted', !musicEnabled);
+  
+  if (btn) {
+    btn.textContent = '🎵';
+    btn.classList.toggle('muted', !musicEnabled);
+  }
   
   if (musicEnabled) {
     initBackgroundMusic();
@@ -230,10 +257,15 @@ function toggleMusic() {
     stopBackgroundMusic();
     toast('Música de fondo silenciada', '');
   }
-  playSfx('click');
+  
+  if (typeof playSfx === 'function') {
+    playSfx('click');
+  }
 }
 
 function startMusicAuto() {
+  if (musicEnabled && musicSequence) return;
+  
   musicEnabled = true;
   const btn = document.getElementById('music-control');
   if (btn) {
@@ -243,9 +275,10 @@ function startMusicAuto() {
   initBackgroundMusic();
 }
 
-
 function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
   return audioCtx;
 }
 
@@ -283,15 +316,16 @@ function playTeleportSound() {
 function toggleAudio() {
   audioEnabled = !audioEnabled;
   const btn = document.getElementById('audio-control');
-  btn.textContent = audioEnabled ? '🔊' : '🔇';
-  btn.classList.toggle('muted', !audioEnabled);
+  
+  if (btn) {
+    btn.textContent = '🔊';
+    btn.classList.toggle('muted', !audioEnabled);
+  }
   
   if (audioEnabled) {
     getAudioCtx().resume();
-    startBackgroundMusic();
     toast('Audio activado', 'ok');
   } else {
-    stopBackgroundMusic();
     toast('Audio silenciado', '');
   }
 }
@@ -1036,14 +1070,14 @@ let mapReady = false;
 
 const CONTINENTS = {
   africa: [
-    [53.1,66.7], [51.5,65.9], [48.5,56.5], [49.5,47.1], [45.9,43.1], [42.9,44.7],
-    [39.3,39.2], [39.3,34.5], [44.4,26.7], [43.9,24.3], [48.0,25.9], [50.0,29.0],
-    [51.0,27.5], [56.1,29.0], [56.6,26.7], [54.1,25.9], [54.1,24.3], [59.2,24.3],
-    [60.2,25.9], [62.2,24.3], [83.7,24.3], [83.7,27.5], [82.7,25.9], [81.1,26.7],
-    [83.2,31.4], [79.6,35.3], [78.1,34.5], [79.6,41.6], [77.6,40.0], [76.5,41.6],
-    [76.0,37.6], [73.5,35.3], [70.4,44.7], [66.3,32.2], [64.3,30.6], [62.2,38.4],
-    [60.2,38.4], [57.1,32.2], [56.6,36.1], [59.2,40.0], [61.2,40.0], [61.7,42.4],
-    [56.6,51.8], [57.7,56.5], [53.1,66.7],
+    [53.1,67.7], [51.5,66.9], [48.5,57.5], [49.5,48.1], [45.9,44.1], [42.9,45.7],
+    [39.3,40.2], [39.3,35.5], [43.4,27.2], [44.9,26.8], [48.0,27.9], [50.0,30.0],
+    [51.0,28.5], [56.1,30.0], [56.6,27.7], [54.1,26.9], [54.1,27.3], [59.2,25.3],
+    [60.2,26.9], [62.2,25.3], [83.7,25.3], [83.7,28.5], [82.7,26.9], [81.1,27.7],
+    [83.2,32.4], [79.6,36.3], [78.1,35.5], [79.6,42.6], [77.6,41.0], [76.5,42.6],
+    [76.0,38.6], [73.5,36.3], [70.4,45.7], [66.3,33.2], [64.3,31.6], [62.2,39.4],
+    [60.2,39.4], [57.1,33.2], [56.6,37.1], [59.2,41.0], [61.2,41.0], [61.7,43.4],
+    [56.6,52.8], [57.7,57.5], [53.1,67.7],
   ],
   eurasia: [
     [82.7,24.3], [62.2,24.3], [60.2,21.2], [58.7,22.0], [59.2,24.3], [54.1,24.3],
@@ -1065,10 +1099,10 @@ const CONTINENTS = {
     [15.3,36.9],
   ],
   americas_south: [
-    [27.6,77.6], [25.5,77.6], [24.0,75.3], [23.0,58.0], [18.9,53.3], [18.9,48.6],
-    [20.9,45.5], [13.3,36.9], [17.3,36.9], [19.4,41.6], [22.4,40.0], [24.5,43.1],
-    [25.5,41.6], [34.2,50.2], [33.2,59.6], [30.1,62.7], [29.6,66.7], [28.6,65.1],
-    [25.0,70.6], [27.6,77.6],
+    [24.6,77.6], [24.5,77.6], [21.0,75.3], [20.0,58.0], [15.9,53.3], [15.9,48.6],
+    [17.9,45.5], [15.3,36.9], [10.7,34.5], [11.9,37.6], [16.4,42.3], [19.4,40.0], [21.5,43.1],
+    [22.5,41.6], [31.2,50.2], [30.2,59.6], [27.1,62.7], [26.6,66.7], [25.6,65.1],
+    [22.0,70.6], [24.6,77.6],
   ],
   oceania: [
     [90.8,66.7], [87.8,66.7], [86.7,63.5], [83.7,65.1], [82.7,66.7], [80.6,66.7],
@@ -1078,14 +1112,14 @@ const CONTINENTS = {
 };
 
 const MAP_PALETTES = {
-  mesopotamia: { land: '#8B6914', landShadow: '#6B4F10', water: '#1a0f05', grid: 'rgba(212,165,116,0.08)', coast: '#A67B2D' },
-  egipto: { land: '#C4A35A', landShadow: '#9A7F3A', water: '#0c0a02', grid: 'rgba(232,200,90,0.06)', coast: '#D4B76A' },
-  grecia: { land: '#8A7F6B', landShadow: '#6B6352', water: '#0a0908', grid: 'rgba(240,230,210,0.05)', coast: '#A69B87' },
-  edadmedia: { land: '#5A4A3A', landShadow: '#3A2F24', water: '#090809', grid: 'rgba(156,124,74,0.06)', coast: '#6B5A4A' },
-  era1300: { land: '#7A5A2A', landShadow: '#5A4020', water: '#0b0904', grid: 'rgba(192,136,64,0.06)', coast: '#8A6A3A' },
-  era1700: { land: '#4A5A6A', landShadow: '#3A4A5A', water: '#060a0e', grid: 'rgba(143,168,192,0.06)', coast: '#5A6A7A' },
-  sigloxx: { land: '#1A4A3A', landShadow: '#0F3A2A', water: '#030d0a', grid: 'rgba(0,212,170,0.06)', coast: '#2A5A4A' },
-  sigloxxi: { land: '#1A2A5A', landShadow: '#0F1A4A', water: '#03040f', grid: 'rgba(0,245,255,0.06)', coast: '#2A3A6A' }
+  mesopotamia: { land: '#8B6914', landShadow: '#6B4F1970', water: '#1a0f05', grid: 'rgba(212,165,116,0.08)', coast: '#00000000' },
+  egipto: { land: '#C4A35A', landShadow: '#9A7F3A70', water: '#0c0a02', grid: 'rgba(232,200,90,0.06)', coast: '#D4B76A00' },
+  grecia: { land: '#8A7F6B', landShadow: '#6B635270', water: '#0a0908', grid: 'rgba(240,230,210,0.05)', coast: '#A69B8700' },
+  edadmedia: { land: '#5A4A3A', landShadow: '#3A2F2470', water: '#090809', grid: 'rgba(156,124,74,0.06)', coast: '#6B5A4A00' },
+  era1300: { land: '#7A5A2A', landShadow: '#5A402070', water: '#0b0904', grid: 'rgba(192,136,64,0.06)', coast: '#8A6A3A00' },
+  era1700: { land: '#4A5A6A', landShadow: '#3A4A5A70', water: '#060a0e', grid: 'rgba(143,168,192,0.06)', coast: '#5A6A7A00' },
+  sigloxx: { land: '#1A4A3A', landShadow: '#0F3A2A70', water: '#030d0a', grid: 'rgba(0,212,170,0.06)', coast: '#2A5A4A00' },
+  sigloxxi: { land: '#1A2A5A', landShadow: '#0F1A4A70', water: '#03040f', grid: 'rgba(0,245,255,0.06)', coast: '#2A3A6A00' }
 };
 
 function initMap() {
@@ -1224,7 +1258,7 @@ function drawEpochDetails(ctx, W, H, type, pixelSize) {
       ctx.strokeStyle = 'rgba(100,149,237,0.5)';
       ctx.lineWidth = pixelSize * 1.5;
       ctx.beginPath();
-      ctx.moveTo(W*0.553, H*0.289); ctx.lineTo(W*0.56, H*0.35); ctx.lineTo(W*0.552, H*0.43);
+      ctx.moveTo(W*0.553, H*0.299); ctx.lineTo(W*0.56, H*0.35); ctx.lineTo(W*0.552, H*0.43);
       ctx.lineTo(W*0.56, H*0.50); ctx.lineTo(W*0.55, H*0.53);
       ctx.stroke();
       ctx.fillStyle = 'rgba(100,149,237,0.3)';
@@ -1352,8 +1386,6 @@ function nav(id) {
   
   if (id === 'foro') loadForo();
   
-  // CORREGIDO: Solo inicializar juego cuando se hace clic en Play
-  // PERO no iniciarlo automáticamente — esperar a que el usuario pulse "Entrar al mundo"
   if (id === 'play') {
     // No hacer nada — el juego se inicia con startGame()
   } else {
@@ -1361,11 +1393,30 @@ function nav(id) {
   }
   
   if (id === 'home') {
+    // Reset completo al ir a inicio
+    currentEpoch = null;
+    document.querySelectorAll('.sl-item').forEach(el => el.classList.remove('active'));
+    closePanel();
+    
     drawStarsBg();
     document.body.className = '';
     document.getElementById('nav-era').textContent = 'Ing. de Software';
     document.getElementById('nav-icon').textContent = '⏱';
+    document.getElementById('map-badge').textContent = 'Selecciona una época';
+    
+    // Limpiar contexto de IA también
+    document.getElementById('ctx-name').textContent = 'Selecciona una época';
+    document.getElementById('ctx-sum').textContent = 'Explora el mapa y elige una época para contextualizar la conversación.';
+    document.getElementById('ctx-sugs').innerHTML = '';
   }
+  
+  // Si estamos en IA y no hay época activa, mostrar estado vacío
+  if (id === 'ia' && !currentEpoch) {
+    document.getElementById('ctx-name').textContent = 'Selecciona una época';
+    document.getElementById('ctx-sum').textContent = 'Explora el mapa y elige una época para contextualizar la conversación.';
+    document.getElementById('ctx-sugs').innerHTML = '';
+  }
+  
   playSfx('click');
 }
 
@@ -1440,7 +1491,7 @@ function toggleRAG() {
   document.getElementById('rag-sw').classList.toggle('on', ragMode);
   appendMsg('ai', ragMode
     ? '🔒 <strong>Modo "Solo material" ACTIVADO.</strong> Responderé únicamente con el contenido del curso.'
-    : '🌐 <strong>Modo híbrido ACTIVADO.</strong> Uso el material del curso + conocimiento general.'
+    : '🌐 <strong>Modo libre ACTIVADO.</strong> Uso el material del curso + conocimiento general.'
   );
   playSfx('notify');
 }
@@ -1454,12 +1505,12 @@ async function sendMsg() {
   setBusy(true); playSfx('click');
 
   const ep = currentEpoch ? EPOCHS.find(e=>e.id===currentEpoch) : null;
-  let system = `Eres Chróno, un asistente experto en historia de la ingeniería en general para la materia "Introducción a la Ingeniería de Software". Respondes en español, de forma clara y pedagógica para estudiantes universitarios. Si te escriben en otro idioma, respondes en ese idioma. Te creó Jesús Forero. NUNCA rechaces una pregunta.`;
+  let system = `Eres Chróno, un asistente experto en historia de la ingeniería en general para la materia "Introducción a la Ingeniería de Software". Respondes en español, de forma clara y pedagógica para estudiantes universitarios. Respondes en otro idioma solo si te piden hacerlo. Te creó Jesús Forero. Respuestas concisas y puntuales. No utilices ** para resaltar una palabra/frase. NUNCA rechaces una pregunta.`;
   if (ep) system += `\n\nEl usuario explora: "${ep.name} (${ep.period})". Avances: ${ep.advances.join(', ')}. Autores: ${ep.authors.join(', ')}.`;
   system += `\n\n=== MATERIAL DEL CURSO ===\n${COURSE_MATERIAL}\n=== FIN MATERIAL ===\n`;
   system += ragMode
     ? '\nMODO ESTRICTO: Responde SOLO con el material del curso. Si no está cubierto, dilo explícitamente.'
-    : '\nMODO HÍBRIDO: Prioriza el material del curso. Si no alcanza, complementa con conocimiento general indicándolo con "Según el material del curso…" o "Además, de forma general…".';
+    : '\nMODO LIBRE: Prioriza el material del curso. Si no alcanza, complementa con conocimiento general indicándolo con "Según el material del curso…" o "Además, de forma general…".';
 
     const messages = [...chatHistory, {role:'user', content:text}];
   try {

@@ -65,13 +65,23 @@ body.epoch-era1700::before,body.epoch-sigloxx::before{background-image:linear-gr
 #bg-canvas{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.6;}
 
 /* ============================================================ AUDIO CONTROL */
-#music-control{position:fixed;bottom:1.2rem;left:4rem;z-index:9000;width:36px;height:36px;background:var(--bg2);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px var(--glow);transition:all .2s;}
-#music-control:hover{box-shadow:0 0 16px var(--glow);transform:scale(1.1);}
-#music-control.muted{border-color:var(--dim);color:var(--dim);box-shadow:none;}
+/* ============================================================ AUDIO CONTROL */
+#music-control,
+#audio-control {position: fixed;bottom: 1.2rem;z-index: 9000;width: 36px;height: 36px;background: var(--bg2);border: 1px solid var(--accent);border-radius: 6px;color: var(--accent);font-size: 0.9rem;cursor: pointer;display: flex;align-items: center;justify-content: center;box-shadow: 0 0 8px var(--glow);transition: all 0.2s;}
 
-#audio-control{position:fixed;bottom:1.2rem;left:1.2rem;z-index:9000;width:36px;height:36px;background:var(--bg2);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px var(--glow);transition:all .2s;}
-#audio-control:hover{box-shadow:0 0 16px var(--glow);transform:scale(1.1);}
-#audio-control.muted{border-color:var(--dim);color:var(--dim);box-shadow:none;}
+#music-control {left: 4rem;}
+
+#audio-control {left: 1.2rem;}
+
+#music-control:hover,
+#audio-control:hover {box-shadow: 0 0 16px var(--glow);transform: scale(1.1);}
+
+#music-control.muted,
+#audio-control.muted {border-color: var(--dim);color: var(--dim);box-shadow: none;}
+
+/* Raya diagonal para botón silenciado — usando el botón como contenedor */
+#music-control.muted::after,
+#audio-control.muted::after {content: '';position: absolute;top: 50%;left: 15%;width: 70%;height: 2px;background: currentColor;transform: translateY(-50%) rotate(-45deg);pointer-events: none;opacity: 0.85;}
 
 /* ============================================================ PANTALLA DE CARGA */
 #loading-screen{position:fixed;inset:0;z-index:9999;background:#03040a;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1.25rem;transition:opacity .6s ease,visibility .6s;}
