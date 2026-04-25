@@ -1801,7 +1801,20 @@ function initGame() {
     ]
   });
 
+  // Hacer gameInstance accesible globalmente para multiplayer
+  window.gameInstance = gameInstance;
+
   setupMobileControls();
+
+  // Inicializar multiplayer después de un breve delay para que Phaser esté listo
+  setTimeout(() => {
+    if (typeof MultiplayerManager !== 'undefined' && window.multiplayer) {
+      const activeScene = gameInstance.scene.scenes.find(s => s.scene.isActive());
+      if (activeScene) {
+        window.multiplayer.connect(activeScene);
+      }
+    }
+  }, 1000);
 }
 
 function showGamePlaceholder(msg) {
@@ -1821,12 +1834,22 @@ function destroyGame() {
     window.removeEventListener('keydown', window._gameKeyHandler);
     window._gameKeyHandler = null;
   }
+  // Desconectar multiplayer
+  if (window.multiplayer) {
+    window.multiplayer.disconnect();
+  }
   if (gameInstance) {
     gameInstance.destroy(true);
     gameInstance = null;
+    window.gameInstance = null;
   }
   const ph = document.getElementById('game-placeholder');
   if (ph) ph.style.display = 'flex';
+  // Ocultar contador de jugadores
+  const pc = document.getElementById('game-player-count');
+  if (pc) pc.style.display = 'none';
+  const cs = document.getElementById('game-connection-status');
+  if (cs) cs.style.display = 'none';
 }
 
 /* =============================================================
@@ -1846,6 +1869,24 @@ function setupMobileControls() {
     'btn-right': { key: 'RIGHT', code: 'ArrowRight' },
     'btn-action':{ key: 'SPACE', code: 'Space' }
   };
+
+  // Botón de chat móvil
+  const chatBtn = document.createElement('button');
+  chatBtn.id = 'btn-chat';
+  chatBtn.textContent = '💬';
+  chatBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:10002;width:50px;height:50px;background:rgba(0,0,0,0.7);border:2px solid var(--accent,#00f5ff);border-radius:50%;color:var(--accent,#00f5ff);font-size:1.2rem;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;box-shadow:0 0 15px var(--glow);';
+
+  // Solo mostrar en móvil
+  if (window.innerWidth <= 700) {
+    document.body.appendChild(chatBtn);
+    chatBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
+      if (activeScene && activeScene.openChatInput) {
+        activeScene.openChatInput();
+      }
+    }, { passive: false });
+  }
 
   Object.entries(keyMap).forEach(([btnId, keyData]) => {
     const el = document.getElementById(btnId);

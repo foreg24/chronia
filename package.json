@@ -1,15 +1,23 @@
 {
   "name": "viaje-en-el-tiempo",
   "version": "1.0.0",
+  "description": "Time Traveler RPG — Multijugador + IA + Foro",
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
-    "dev": "vercel dev"
+    "dev": "concurrently \"node api/index.js\" \"node server.js\"",
+    "server": "node server.js",
+    "vercel-dev": "vercel dev"
   },
   "dependencies": {
+    "concurrently": "^8.2.2",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
-    "groq-sdk": "^0.15.0"
+    "groq-sdk": "^0.15.0",
+    "ws": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

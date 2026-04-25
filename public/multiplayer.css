@@ -1,0 +1,140 @@
+/* ============================================================
+   MULTIPLUGADOR — Estilos para chat, nombres y UI del juego
+   ============================================================ */
+
+/* Overlay de chat del juego */
+#game-chat-overlay {
+  animation: chatSlideUp 0.2s ease;
+}
+
+@keyframes chatSlideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+#game-chat-input::placeholder {
+  color: #4a5568;
+}
+
+#game-chat-input:focus {
+  outline: none;
+}
+
+/* Contador de jugadores */
+#game-player-count {
+  animation: fadeSlideIn 0.3s ease;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Estado de conexión */
+#game-connection-status {
+  animation: pulseWarning 2s ease-in-out infinite;
+}
+
+@keyframes pulseWarning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Modal de nombre */
+#name-modal-overlay {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+#name-modal-overlay > div {
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Botón de chat móvil */
+#btn-chat {
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#btn-chat:active {
+  transform: scale(0.9);
+  box-shadow: 0 0 25px rgba(0, 245, 255, 0.6);
+}
+
+/* Estilos para el canvas del juego cuando está activo */
+#game-container canvas:focus {
+  outline: none;
+}
+
+/* Asegurar que el chat overlay no interfiera con el juego */
+#game-chat-overlay {
+  pointer-events: auto;
+}
+
+#game-container {
+  pointer-events: auto;
+}
+
+/* Responsive para controles móviles */
+@media (max-width: 700px) {
+  #game-player-count {
+    top: 70px !important;
+    right: 10px !important;
+    font-size: 0.28rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+
+  #game-connection-status {
+    top: 70px !important;
+    left: 10px !important;
+    font-size: 0.24rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+
+  #game-chat-overlay {
+    bottom: 140px !important;
+  }
+}
+
+/* Animación de burbuja de chat en el juego */
+@keyframes bubblePop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Tooltip de controles */
+.game-controls-hint {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(4, 4, 10, 0.9);
+  border: 1px solid var(--accent, #00f5ff);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-family: 'VT323', monospace;
+  font-size: 0.9rem;
+  color: var(--mid, #8892a4);
+  z-index: 10001;
+  pointer-events: none;
+  animation: fadeSlideUp 0.5s ease;
+}
+
+.game-controls-hint kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.3rem;
+  color: var(--accent, #00f5ff);
+}

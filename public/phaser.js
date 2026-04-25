@@ -130,6 +130,49 @@ class BaseScene extends Phaser.Scene {
         });
         return particles;
     }
+
+    // === MULTIPLAYER INTEGRATION ===
+    setupMultiplayer() {
+        if (window.multiplayer && !window.multiplayer.connected) {
+            window.multiplayer.connect(this);
+        } else if (window.multiplayer && window.multiplayer.connected) {
+            window.multiplayer.joinRoom(this);
+        }
+        this.chatInput = null;
+        this.isChatOpen = false;
+        this.chatKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+        this.chatKey.on('down', () => { if (!this.isChatOpen) this.openChatInput(); });
+        this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        this.escKey.on('down', () => { if (this.isChatOpen) this.closeChatInput(); });
+    }
+
+    openChatInput() {
+        if (this.isChatOpen) return;
+        this.isChatOpen = true;
+        if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+        const overlay = document.getElementById('game-chat-overlay');
+        if (overlay) { overlay.style.display = 'flex'; document.getElementById('game-chat-input').focus(); }
+    }
+
+    closeChatInput() {
+        this.isChatOpen = false;
+        const overlay = document.getElementById('game-chat-overlay');
+        if (overlay) overlay.style.display = 'none';
+        const canvas = document.querySelector('#game-container canvas');
+        if (canvas) canvas.focus();
+    }
+
+    sendChatMessage(text) {
+        if (window.multiplayer) window.multiplayer.sendChat(text);
+        this.closeChatInput();
+    }
+
+    notifySceneChange(newSceneKey) {
+        const roomMap = { 'ExteriorScene': 'exterior', 'CasaScene': 'casa', 'FuturisticScene': 'futuristic', 'EpochSelectorScene': 'selector', 'EpochScene': 'epoch' };
+        if (window.multiplayer && window.multiplayer.connected) {
+            window.multiplayer.changeScene(roomMap[newSceneKey] || 'exterior', newSceneKey, this.player ? this.player.x : 400, this.player ? this.player.y : 400);
+        }
+    }
 }
 
 // =============================================================
@@ -250,6 +293,9 @@ class ExteriorScene extends BaseScene {
         
         // Animación de entrada
         this.cameras.main.fadeIn(500);
+        
+        // Setup multiplayer
+        this.setupMultiplayer();
     }
     
     createTextures() {
@@ -396,6 +442,11 @@ class ExteriorScene extends BaseScene {
         
         this.updatePlayerVisuals(this.player);
         
+        // Enviar posición al servidor
+        if (moving && window.multiplayer && window.multiplayer.connected && this.player) {
+            window.multiplayer.sendMove(this.player.x, this.player.y);
+        }
+        
         // Verificar proximidad a la puerta
         const distToDoor = Phaser.Math.Distance.Between(this.player.x, this.player.y, 400, 270);
         this.doorIndicator.setVisible(distToDoor < 50);
@@ -413,6 +464,7 @@ class ExteriorScene extends BaseScene {
     }
     
     enterHouse() {
+        this.notifySceneChange('CasaScene');
         this.cameras.main.fadeOut(300);
         this.time.delayedCall(300, () => {
             this.scene.start('CasaScene');
@@ -515,6 +567,9 @@ class CasaScene extends BaseScene {
         
         // Animación de entrada
         this.cameras.main.fadeIn(500);
+        
+        // Setup multiplayer
+        this.setupMultiplayer();
         
         // Salida de la casa
         this.exitZone = this.add.rectangle(400, 420, 100, 20, 0xff0000, 0);
@@ -629,6 +684,15 @@ class CasaScene extends BaseScene {
         
         this.updatePlayerVisuals(this.player);
         
+        // Enviar posición al servidor
+        if (window.multiplayer && window.multiplayer.connected && this.player) {
+            const vx = this.player.body.velocity.x;
+            const vy = this.player.body.velocity.y;
+            if (vx !== 0 || vy !== 0) {
+                window.multiplayer.sendMove(this.player.x, this.player.y);
+            }
+        }
+        
         // Verificar proximidad a puerta secreta
         const distToSecret = Phaser.Math.Distance.Between(this.player.x, this.player.y, 100, 150);
         this.secretIndicator.setVisible(distToSecret < 80);
@@ -653,6 +717,7 @@ class CasaScene extends BaseScene {
     }
     
     enterFuturisticRoom() {
+        this.notifySceneChange('FuturisticScene');
         this.cameras.main.fadeOut(300);
         this.time.delayedCall(300, () => {
             this.scene.start('FuturisticScene');
@@ -760,6 +825,9 @@ class FuturisticScene extends BaseScene {
         }).setOrigin(0.5).setVisible(false).setDepth(20);
 
         this.cameras.main.fadeIn(500);
+        
+        // Setup multiplayer
+        this.setupMultiplayer();
         
         // Efecto de scanline
         this.createScanlineEffect();
@@ -969,6 +1037,15 @@ class FuturisticScene extends BaseScene {
         
         this.updatePlayerVisuals(this.player);
         
+        // Enviar posición al servidor
+        if (window.multiplayer && window.multiplayer.connected && this.player) {
+            const vx = this.player.body.velocity.x;
+            const vy = this.player.body.velocity.y;
+            if (vx !== 0 || vy !== 0) {
+                window.multiplayer.sendMove(this.player.x, this.player.y);
+            }
+        }
+        
         // Verificar proximidad a la máquina
         const distToMachine = Phaser.Math.Distance.Between(this.player.x, this.player.y, 400, 200);
         this.machineIndicator.setVisible(distToMachine < 60);
@@ -993,6 +1070,7 @@ class FuturisticScene extends BaseScene {
     }
     
     activateTimeMachine() {
+        this.notifySceneChange('EpochSelectorScene');
         // Efecto de activación
         this.cameras.main.shake(200, 0.01);
         
@@ -1097,6 +1175,9 @@ class EpochSelectorScene extends BaseScene {
         
         // Animación de entrada
         this.cameras.main.fadeIn(500);
+        
+        // Setup multiplayer
+        this.setupMultiplayer();
         
         // Efecto de partículas de fondo
         this.createAmbientParticles();
@@ -1287,6 +1368,7 @@ class EpochSelectorScene extends BaseScene {
     }
     
     selectEpoch(epoch) {
+        this.notifySceneChange('EpochScene');
         // Efecto de selección
         this.cameras.main.shake(100, 0.01);
         
@@ -1404,6 +1486,9 @@ class EpochScene extends BaseScene {
         
         // Animación de entrada
         this.cameras.main.fadeIn(500);
+        
+        // Setup multiplayer
+        this.setupMultiplayer();
     }
     
     getEpochBgColor() {
@@ -1641,6 +1726,15 @@ class EpochScene extends BaseScene {
         
         this.updatePlayerVisuals(this.player);
         
+        // Enviar posición al servidor
+        if (window.multiplayer && window.multiplayer.connected && this.player) {
+            const vx = this.player.body.velocity.x;
+            const vy = this.player.body.velocity.y;
+            if (vx !== 0 || vy !== 0) {
+                window.multiplayer.sendMove(this.player.x, this.player.y);
+            }
+        }
+        
         // Verificar proximidad a la máquina
         const distToMachine = Phaser.Math.Distance.Between(this.player.x, this.player.y, 700, 380);
         this.machineIndicator.setVisible(distToMachine < 60);
@@ -1657,6 +1751,7 @@ class EpochScene extends BaseScene {
     }
     
     returnToSelector() {
+        this.notifySceneChange('EpochSelectorScene');
         this.cameras.main.shake(100, 0.01);
         
         const flash = this.add.rectangle(400, 225, 800, 450, 0x00f5ff);
