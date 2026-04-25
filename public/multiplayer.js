@@ -20,16 +20,9 @@ class MultiplayerManager {
   }
 
   connect(scene) {
-    // Determinar URL del WebSocket
+    // Misma URL que el navegador: http→ws, https→wss
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}`;
-
-    // En producción usa el mismo host; en local usa puerto 3000 (servidor unificado)
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const devUrl  = `ws://localhost:${window.location.port || 3000}`;
-    const prodUrl = `${protocol}//${host}`;
-    const wsUrl   = isLocal ? devUrl : prodUrl;
+    const wsUrl = `${protocol}//${window.location.host}`;
 
     try {
       this.ws = new WebSocket(wsUrl);

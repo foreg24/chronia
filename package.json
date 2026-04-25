@@ -5,12 +5,9 @@
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
-    "dev": "concurrently \"node api/index.js\" \"node server.js\"",
-    "server": "node server.js",
-    "vercel-dev": "vercel dev"
+    "dev": "node api/index.js"
   },
   "dependencies": {
-    "concurrently": "^8.2.2",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
@@ -18,6 +15,6 @@
     "ws": "^8.16.0"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   }
 }
