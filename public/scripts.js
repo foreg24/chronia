@@ -197,7 +197,7 @@ async function initBackgroundMusic() {
     source.connect(gain);
     gain.connect(ctx.destination);
 
-    source.start(0, 4);
+    source.start(0, 4.4);
 
     musicSequence = source;
     bgGain = gain;
