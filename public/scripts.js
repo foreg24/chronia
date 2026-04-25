@@ -1870,30 +1870,11 @@ function setupMobileControls() {
     'btn-action':{ key: 'SPACE', code: 'Space' }
   };
 
-  // Botón de chat móvil
-  const chatBtn = document.createElement('button');
-  chatBtn.id = 'btn-chat';
-  chatBtn.textContent = '💬';
-  chatBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:10002;width:50px;height:50px;background:rgba(0,0,0,0.7);border:2px solid var(--accent,#00f5ff);border-radius:50%;color:var(--accent,#00f5ff);font-size:1.2rem;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;box-shadow:0 0 15px var(--glow);';
-
-  // Solo mostrar en móvil
-  if (window.innerWidth <= 700) {
-    document.body.appendChild(chatBtn);
-    chatBtn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
-      if (activeScene && activeScene.openChatInput) {
-        activeScene.openChatInput();
-      }
-    }, { passive: false });
-  }
-
   Object.entries(keyMap).forEach(([btnId, keyData]) => {
     const el = document.getElementById(btnId);
     if (!el) return;
 
     const dispatchKey = (type) => {
-      // Crear evento de teclado que Phaser pueda capturar
       const event = new KeyboardEvent(type, {
         key: keyData.key,
         code: keyData.code,
@@ -1902,46 +1883,71 @@ function setupMobileControls() {
         bubbles: true,
         cancelable: true
       });
-      
-      // Disparar en el canvas del juego si existe
+
       const canvas = document.querySelector('#game-container canvas');
-      if (canvas) {
-        canvas.dispatchEvent(event);
-      }
-      // También en window como fallback
+      if (canvas) canvas.dispatchEvent(event);
       window.dispatchEvent(event);
     };
 
-    // Touch events (móvil)
     el.addEventListener('touchstart', (e) => { 
       e.preventDefault(); 
       dispatchKey('keydown'); 
       el.classList.add('pressed');
       playSfx('click'); 
     }, { passive: false });
-    
+
     el.addEventListener('touchend', (e) => { 
       e.preventDefault(); 
       dispatchKey('keyup'); 
       el.classList.remove('pressed');
     }, { passive: false });
 
-    // Mouse events (desktop testing)
     el.addEventListener('mousedown', () => { 
       dispatchKey('keydown'); 
       el.classList.add('pressed');
     });
-    
+
     el.addEventListener('mouseup', () => { 
       dispatchKey('keyup'); 
       el.classList.remove('pressed');
     });
-    
+
     el.addEventListener('mouseleave', () => { 
       dispatchKey('keyup'); 
       el.classList.remove('pressed');
     });
   });
+
+  // Botón CENTRO del D-Pad (●) para abrir chat
+  const centerBtn = document.querySelector('.d-center');
+  if (centerBtn) {
+    centerBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
+      if (activeScene && activeScene.openChatInput) {
+        activeScene.openChatInput();
+      }
+      centerBtn.classList.add('pressed');
+      playSfx('click');
+    }, { passive: false });
+
+    centerBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      centerBtn.classList.remove('pressed');
+    }, { passive: false });
+
+    centerBtn.addEventListener('mousedown', () => {
+      const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
+      if (activeScene && activeScene.openChatInput) {
+        activeScene.openChatInput();
+      }
+      centerBtn.classList.add('pressed');
+    });
+
+    centerBtn.addEventListener('mouseup', () => {
+      centerBtn.classList.remove('pressed');
+    });
+  }
 }
 
 function getKeyCode(key) {

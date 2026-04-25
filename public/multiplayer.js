@@ -1,6 +1,7 @@
 /* =============================================================
    MULTIJUGADOR — WebSocket Client para Time Traveler RPG
-   Chat, nombres de jugadores, sincronización de posiciones
+   v2.0 — Jugadores visibles por sala, filtrado por escena en cliente
+   Chat 7s, sin jugadores fantasma, botón centro D-pad para chat
    ============================================================= */
 
 class MultiplayerManager {
@@ -8,19 +9,19 @@ class MultiplayerManager {
     this.ws = null;
     this.id = null;
     this.connected = false;
-    this.players = new Map(); // id -> { sprite, nameText, chatBubble, name, x, y }
+    this.players = new Map(); // id -> { container, scene, nameText, ... }
     this.currentRoom = 'exterior';
+    this.currentScene = 'ExteriorScene';
     this.playerName = localStorage.getItem('playerName') || '';
     this.reconnectAttempts = 0;
     this.maxReconnect = 5;
     this.pingInterval = null;
     this.chatHistory = [];
-    this.onChatMessage = null; // callback
-    this.onPlayerCountChange = null; // callback
+    this.onChatMessage = null;
+    this.onPlayerCountChange = null;
   }
 
   connect(scene) {
-    // Misma URL que el navegador: http→ws, https→wss
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}`;
 
@@ -32,14 +33,12 @@ class MultiplayerManager {
         this.connected = true;
         this.reconnectAttempts = 0;
 
-        // Pedir nombre si no lo tiene
         if (!this.playerName) {
-          this.askForName();
+          this.askForName(scene);
         } else {
           this.joinRoom(scene);
         }
 
-        // Ping cada 15 segundos
         this.pingInterval = setInterval(() => {
           if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({ type: 'ping' }));
@@ -62,7 +61,6 @@ class MultiplayerManager {
         this.cleanupPlayers(scene);
         clearInterval(this.pingInterval);
 
-        // Reconexión automática
         if (this.reconnectAttempts < this.maxReconnect) {
           this.reconnectAttempts++;
           setTimeout(() => {
@@ -78,13 +76,13 @@ class MultiplayerManager {
 
     } catch (e) {
       console.error('Error conectando WebSocket:', e);
-      // Modo offline
       this.showOfflineMode();
     }
   }
 
-  askForName() {
-    // Crear modal para pedir nombre
+  askForName(scene) {
+    if (document.getElementById('name-modal-overlay')) return;
+
     const overlay = document.createElement('div');
     overlay.id = 'name-modal-overlay';
     overlay.style.cssText = `
@@ -140,7 +138,6 @@ class MultiplayerManager {
       localStorage.setItem('playerName', this.playerName);
       overlay.remove();
 
-      // Ahora sí unirse a la sala
       const currentScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
       if (currentScene) {
         this.joinRoom(currentScene);
@@ -165,6 +162,7 @@ class MultiplayerManager {
     };
 
     this.currentRoom = roomMap[scene.scene.key] || 'exterior';
+    this.currentScene = scene.scene.key;
 
     const x = scene.player ? scene.player.x : 400;
     const y = scene.player ? scene.player.y : 400;
@@ -183,14 +181,22 @@ class MultiplayerManager {
     switch (msg.type) {
       case 'init': {
         this.id = msg.id;
-        // Crear sprites para jugadores existentes
+        // Limpiar jugadores existentes
+        this.cleanupPlayers(scene);
+
+        // Crear sprites SOLO para jugadores en la MISMA escena
         msg.players.forEach(p => {
-          this.createPlayerSprite(p, scene);
+          if (p.scene === this.currentScene) {
+            this.createPlayerSprite(p, scene);
+          }
         });
-        // Cargar mensajes previos
+
+        // Cargar mensajes previos de la misma escena
         if (msg.messages) {
           msg.messages.forEach(m => {
-            this.showChatBubble(m.senderId, m.name, m.text, scene);
+            if (m.scene === this.currentScene) {
+              this.showChatBubble(m.senderId, m.name, m.text, scene);
+            }
           });
         }
         this.updatePlayerCount();
@@ -198,7 +204,8 @@ class MultiplayerManager {
       }
 
       case 'playerJoined': {
-        if (msg.id !== this.id) {
+        // Solo mostrar si está en la MISMA escena
+        if (msg.id !== this.id && msg.scene === this.currentScene) {
           this.createPlayerSprite(msg, scene);
           this.showSystemMessage(`${msg.name} se ha unido`, scene);
           this.updatePlayerCount();
@@ -207,45 +214,80 @@ class MultiplayerManager {
       }
 
       case 'playerMoved': {
-        this.updatePlayerPosition(msg.id, msg.x, msg.y, scene);
+        // Solo actualizar si está en la MISMA escena
+        const player = this.players.get(msg.id);
+        if (player) {
+          this.updatePlayerPosition(msg.id, msg.x, msg.y, scene);
+        }
         break;
       }
 
       case 'playerLeft': {
-        this.removePlayer(msg.id, scene);
-        this.showSystemMessage(`${msg.name} se ha ido`, scene);
-        this.updatePlayerCount();
+        if (msg.id !== this.id) {
+          this.removePlayer(msg.id, scene);
+          this.showSystemMessage(`${msg.name} se ha ido`, scene);
+          this.updatePlayerCount();
+        }
+        break;
+      }
+
+      case 'playerSceneChange': {
+        // Un jugador cambió de escena
+        if (msg.id === this.id) return;
+
+        if (msg.scene === this.currentScene) {
+          // Llegó a nuestra escena — crearlo
+          if (!this.players.has(msg.id)) {
+            this.createPlayerSprite({
+              id: msg.id,
+              name: msg.name,
+              x: msg.x,
+              y: msg.y,
+              scene: msg.scene
+            }, scene);
+            this.updatePlayerCount();
+          }
+        } else {
+          // Se fue de nuestra escena — eliminarlo
+          if (this.players.has(msg.id)) {
+            this.removePlayer(msg.id, scene);
+            this.updatePlayerCount();
+          }
+        }
         break;
       }
 
       case 'chatMessage': {
-        this.showChatBubble(msg.senderId, msg.name, msg.text, scene);
-        if (this.onChatMessage) {
-          this.onChatMessage(msg);
+        // Solo mostrar si es de la misma escena
+        if (msg.scene === this.currentScene) {
+          this.showChatBubble(msg.senderId, msg.name, msg.text, scene);
+          if (this.onChatMessage) {
+            this.onChatMessage(msg);
+          }
         }
         break;
       }
 
       case 'pong': {
-        // Ping recibido, todo bien
         break;
       }
     }
   }
 
   createPlayerSprite(playerData, scene) {
-    if (this.players.has(playerData.id)) return;
+    if (this.players.has(playerData.id)) {
+      this.updatePlayerPosition(playerData.id, playerData.x, playerData.y, scene);
+      return;
+    }
     if (!scene || !scene.add) return;
 
     const container = scene.add.container(playerData.x, playerData.y);
     container.setDepth(15);
 
-    // Sprite del jugador (diferente color para otros)
-    const body = scene.add.rectangle(0, 0, 16, 24, 0xff6b35); // Naranja para otros jugadores
+    const body = scene.add.rectangle(0, 0, 16, 24, 0xff6b35);
     const head = scene.add.circle(0, -14, 6, 0xffdbac);
     const shadow = scene.add.ellipse(0, 12, 14, 6, 0x000000, 0.3);
 
-    // Nombre flotante
     const nameText = scene.add.text(0, -38, playerData.name, {
       fontFamily: '"Press Start 2P", monospace',
       fontSize: '7px',
@@ -255,13 +297,11 @@ class MultiplayerManager {
       align: 'center'
     }).setOrigin(0.5);
 
-    // Indicador online (punto verde)
     const onlineDot = scene.add.circle(0, -48, 3, 0x39ff14);
     onlineDot.setAlpha(0.8);
 
     container.add([shadow, body, head, nameText, onlineDot]);
 
-    // Animación de entrada
     container.setScale(0);
     scene.tweens.add({
       targets: container,
@@ -278,7 +318,9 @@ class MultiplayerManager {
       nameText: nameText,
       onlineDot: onlineDot,
       chatBubble: null,
+      chatBubbleTimer: null,
       name: playerData.name,
+      scene: playerData.scene,
       x: playerData.x,
       y: playerData.y,
       targetX: playerData.x,
@@ -293,7 +335,6 @@ class MultiplayerManager {
     player.targetX = x;
     player.targetY = y;
 
-    // Interpolación suave
     if (scene && scene.tweens) {
       scene.tweens.add({
         targets: player.container,
@@ -315,6 +356,11 @@ class MultiplayerManager {
     const player = this.players.get(id);
     if (!player) return;
 
+    if (player.chatBubbleTimer) {
+      clearTimeout(player.chatBubbleTimer);
+      player.chatBubbleTimer = null;
+    }
+
     if (player.container && scene && scene.tweens) {
       scene.tweens.add({
         targets: player.container,
@@ -333,19 +379,18 @@ class MultiplayerManager {
   }
 
   showChatBubble(senderId, name, text, scene) {
-    // Buscar el jugador
     let targetContainer = null;
     let isLocal = false;
+    let player = null;
 
     if (senderId === this.id) {
-      // Es mensaje propio, buscar el jugador local
       const currentScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
       if (currentScene && currentScene.player) {
         targetContainer = currentScene.player;
         isLocal = true;
       }
     } else {
-      const player = this.players.get(senderId);
+      player = this.players.get(senderId);
       if (player && player.container) {
         targetContainer = player.container;
       }
@@ -353,12 +398,10 @@ class MultiplayerManager {
 
     if (!targetContainer || !scene || !scene.add) return;
 
-    // Crear burbuja de chat
     const bubbleWidth = Math.min(Math.max(text.length * 6 + 20, 60), 200);
     const bubbleHeight = 28;
-    const bubbleY = isLocal ? -55 : -55;
 
-    const bubbleContainer = scene.add.container(0, bubbleY);
+    const bubbleContainer = scene.add.container(0, -55);
 
     const bg = scene.add.rectangle(0, 0, bubbleWidth, bubbleHeight, 0x000000, 0.85);
     bg.setStrokeStyle(1, 0x00f5ff);
@@ -370,7 +413,6 @@ class MultiplayerManager {
       wordWrap: { width: bubbleWidth - 16 }
     }).setOrigin(0.5);
 
-    // Pequeño triángulo apuntando al jugador
     const triangle = scene.add.triangle(0, bubbleHeight/2, -6, 0, 6, 0, 0, 6, 0x000000);
     triangle.setStrokeStyle(1, 0x00f5ff);
 
@@ -378,12 +420,10 @@ class MultiplayerManager {
     bubbleContainer.setDepth(100);
 
     if (isLocal) {
-      // Para jugador local, posicionar sobre el jugador
       bubbleContainer.x = targetContainer.x;
       bubbleContainer.y = targetContainer.y - 55;
       scene.add.existing(bubbleContainer);
 
-      // Seguir al jugador
       const followEvent = scene.time.addEvent({
         delay: 16,
         callback: () => {
@@ -395,8 +435,7 @@ class MultiplayerManager {
         loop: true
       });
 
-      // Destruir después de 4 segundos
-      scene.time.delayedCall(4000, () => {
+      scene.time.delayedCall(7000, () => {
         followEvent.remove();
         if (bubbleContainer) {
           scene.tweens.add({
@@ -409,34 +448,39 @@ class MultiplayerManager {
         }
       });
     } else {
-      // Para otros jugadores, añadir a su container
       targetContainer.add(bubbleContainer);
 
-      // Destruir burbuja anterior si existe
       if (player.chatBubble) {
         player.chatBubble.destroy();
       }
+      if (player.chatBubbleTimer) {
+        clearTimeout(player.chatBubbleTimer);
+      }
       player.chatBubble = bubbleContainer;
 
-      // Destruir después de 4 segundos
-      scene.time.delayedCall(4000, () => {
+      player.chatBubbleTimer = setTimeout(() => {
         if (bubbleContainer && bubbleContainer.active) {
-          scene.tweens.add({
-            targets: bubbleContainer,
-            alpha: 0,
-            y: bubbleContainer.y - 20,
-            duration: 300,
-            onComplete: () => {
-              if (bubbleContainer && bubbleContainer.active) {
-                bubbleContainer.destroy();
+          if (scene && scene.tweens) {
+            scene.tweens.add({
+              targets: bubbleContainer,
+              alpha: 0,
+              y: bubbleContainer.y - 20,
+              duration: 300,
+              onComplete: () => {
+                if (bubbleContainer && bubbleContainer.active) {
+                  bubbleContainer.destroy();
+                }
+                if (player && player.chatBubble === bubbleContainer) {
+                  player.chatBubble = null;
+                }
               }
-              if (player.chatBubble === bubbleContainer) {
-                player.chatBubble = null;
-              }
-            }
-          });
+            });
+          } else {
+            bubbleContainer.destroy();
+            if (player) player.chatBubble = null;
+          }
         }
-      });
+      }, 7000);
     }
   }
 
@@ -480,7 +524,7 @@ class MultiplayerManager {
 
     this.ws.send(JSON.stringify({
       type: 'chat',
-      text: text.trim().substring(0, 100) // máximo 100 chars
+      text: text.trim().substring(0, 100)
     }));
   }
 
@@ -492,6 +536,8 @@ class MultiplayerManager {
     if (currentScene) {
       this.cleanupPlayers(currentScene);
     }
+
+    this.currentScene = newScene;
 
     this.ws.send(JSON.stringify({
       type: 'sceneChange',
@@ -506,6 +552,10 @@ class MultiplayerManager {
 
   cleanupPlayers(scene) {
     this.players.forEach((player, id) => {
+      if (player.chatBubbleTimer) {
+        clearTimeout(player.chatBubbleTimer);
+        player.chatBubbleTimer = null;
+      }
       if (player.container) {
         player.container.destroy();
       }
@@ -515,7 +565,7 @@ class MultiplayerManager {
 
   updatePlayerCount() {
     if (this.onPlayerCountChange) {
-      this.onPlayerCountChange(this.players.size + 1); // +1 por el jugador local
+      this.onPlayerCountChange(this.players.size + 1);
     }
   }
 
@@ -543,6 +593,7 @@ class MultiplayerManager {
     }
     clearInterval(this.pingInterval);
     this.connected = false;
+    this.players.clear();
   }
 }
 

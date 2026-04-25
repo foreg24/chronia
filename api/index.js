@@ -32,7 +32,7 @@ try {
 }
 
 // ============================================================
-// BASE DE DATOS FORO (usa /tmp — funciona en Railway y Vercel)
+// BASE DE DATOS FORO
 // ============================================================
 const DB_PATH = path.join('/tmp', 'foro-db.json');
 
@@ -125,14 +125,15 @@ app.get('*', (req, res) => {
 });
 
 // ============================================================
-// WEBSOCKET MULTIJUGADOR
+// WEBSOCKET MULTIJUGADOR — v2.0
 // ============================================================
+// LÓGICA: Los jugadores en la MISMA SALA se ven entre sí.
+// La escena se sincroniza para renderizar correctamente.
+// Solo playerJoined/playerLeft al conectar/desconectar.
+// ============================================================
+
 const wss = new WebSocket.Server({ server });
 const rooms = new Map();
-
-['exterior','casa','futuristic','selector','epoch'].forEach(id => {
-  rooms.set(id, { players: new Map(), messages: [], lastActivity: Date.now() });
-});
 
 function getRoom(roomId) {
   if (!rooms.has(roomId))
@@ -152,27 +153,59 @@ function genId() {
   return Math.random().toString(36).substring(2,10) + Date.now().toString(36).substring(2,6);
 }
 
+// ============================================================
+// HEARTBEAT Y LIMPIEZA
+// ============================================================
+const HEARTBEAT_INTERVAL = 10000;
+const CLEANUP_INTERVAL = 15000;
+const HEARTBEAT_TIMEOUT = 20000;
+
+setInterval(() => {
+  wss.clients.forEach(ws => {
+    if (ws.isAlive === false) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping(() => {});
+  });
+}, HEARTBEAT_INTERVAL);
+
 setInterval(() => {
   const now = Date.now();
   rooms.forEach((room, roomId) => {
     const toRemove = [];
-    room.players.forEach((p, id) => { if (now - p.timestamp > 60000) toRemove.push(id); });
+    room.players.forEach((p, id) => {
+      if (now - p.timestamp > HEARTBEAT_TIMEOUT) toRemove.push(id);
+    });
     toRemove.forEach(id => {
       const p = room.players.get(id);
       room.players.delete(id);
-      broadcast(roomId, { type: 'playerLeft', id, name: p?.name || 'Anónimo' });
+      if (p) {
+        broadcast(roomId, { type: 'playerLeft', id, name: p.name || 'Anónimo' });
+        console.log(`👻 Eliminado fantasma: ${p.name} de ${roomId}`);
+      }
     });
   });
-}, 30000);
+}, CLEANUP_INTERVAL);
 
 wss.on('connection', (ws) => {
   const clientId = genId();
-  let currentRoom = null, playerName = 'Viajero', currentScene = 'ExteriorScene';
-  console.log(`🔌 ${clientId}`);
+  let currentRoom = null;
+  let playerName = 'Viajero';
+  let currentScene = 'ExteriorScene';
+
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+
+  console.log(`🔌 Conectado: ${clientId}`);
 
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data);
+
+      if (currentRoom) {
+        const p = getRoom(currentRoom).players.get(clientId);
+        if (p) p.timestamp = Date.now();
+      }
+
       switch (msg.type) {
 
         case 'join': {
@@ -180,50 +213,124 @@ wss.on('connection', (ws) => {
           currentRoom = msg.room || 'exterior';
           currentScene = msg.scene || 'ExteriorScene';
           const room = getRoom(currentRoom);
-          room.players.set(clientId, { id: clientId, name: playerName, x: msg.x||400, y: msg.y||400, room: currentRoom, scene: currentScene, ws, timestamp: Date.now() });
-          const existing = [];
-          room.players.forEach((p,id) => { if(id!==clientId) existing.push({id:p.id,name:p.name,x:p.x,y:p.y,scene:p.scene}); });
-          ws.send(JSON.stringify({ type:'init', id:clientId, players:existing, messages:room.messages.slice(-20) }));
-          broadcast(currentRoom, { type:'playerJoined', id:clientId, name:playerName, x:msg.x||400, y:msg.y||400, scene:currentScene }, clientId);
-          console.log(`👤 ${playerName} → ${currentRoom}`);
+
+          // Eliminar duplicados del mismo ID
+          if (room.players.has(clientId)) {
+            room.players.delete(clientId);
+          }
+
+          room.players.set(clientId, {
+            id: clientId,
+            name: playerName,
+            x: msg.x || 400,
+            y: msg.y || 400,
+            room: currentRoom,
+            scene: currentScene,
+            ws: ws,
+            timestamp: Date.now()
+          });
+
+          // Enviar TODOS los jugadores de la sala (incluye su escena para filtrar en cliente)
+          const allPlayers = [];
+          room.players.forEach((p, id) => {
+            if (id !== clientId) {
+              allPlayers.push({ id: p.id, name: p.name, x: p.x, y: p.y, scene: p.scene });
+            }
+          });
+
+          ws.send(JSON.stringify({
+            type: 'init',
+            id: clientId,
+            players: allPlayers,
+            messages: room.messages.slice(-20)
+          }));
+
+          // Notificar a TODOS en la sala que llegó un nuevo jugador
+          broadcast(currentRoom, {
+            type: 'playerJoined',
+            id: clientId,
+            name: playerName,
+            x: msg.x || 400,
+            y: msg.y || 400,
+            scene: currentScene
+          }, clientId);
+
+          console.log(`👤 ${playerName} → ${currentRoom} / ${currentScene}`);
           break;
         }
 
         case 'move': {
           if (!currentRoom) return;
           const p = getRoom(currentRoom).players.get(clientId);
-          if (p) { p.x=msg.x; p.y=msg.y; p.timestamp=Date.now(); broadcast(currentRoom,{type:'playerMoved',id:clientId,x:msg.x,y:msg.y},clientId); }
+          if (p) {
+            p.x = msg.x;
+            p.y = msg.y;
+            p.timestamp = Date.now();
+            // Broadcast a TODOS en la sala (el cliente filtrará por escena)
+            broadcast(currentRoom, {
+              type: 'playerMoved',
+              id: clientId,
+              x: msg.x,
+              y: msg.y,
+              scene: p.scene
+            }, clientId);
+          }
           break;
         }
 
         case 'sceneChange': {
           if (!currentRoom) return;
-          const old = getRoom(currentRoom);
-          old.players.delete(clientId);
-          broadcast(currentRoom, { type:'playerLeft', id:clientId, name:playerName }, clientId);
-          currentRoom = msg.room||'exterior'; currentScene = msg.scene||'ExteriorScene';
-          const nr = getRoom(currentRoom);
-          nr.players.set(clientId, { id:clientId,name:playerName,x:msg.x||400,y:msg.y||400,room:currentRoom,scene:currentScene,ws,timestamp:Date.now() });
-          const np = [];
-          nr.players.forEach((p,id)=>{ if(id!==clientId) np.push({id:p.id,name:p.name,x:p.x,y:p.y,scene:p.scene}); });
-          ws.send(JSON.stringify({ type:'init',id:clientId,players:np,messages:nr.messages.slice(-20) }));
-          broadcast(currentRoom, { type:'playerJoined',id:clientId,name:playerName,x:msg.x||400,y:msg.y||400,scene:currentScene }, clientId);
-          console.log(`🔄 ${playerName} → ${currentRoom}`);
+          const room = getRoom(currentRoom);
+          const player = room.players.get(clientId);
+          if (!player) return;
+
+          const oldScene = player.scene;
+          player.scene = msg.scene || 'ExteriorScene';
+          player.x = msg.x || 400;
+          player.y = msg.y || 400;
+          player.timestamp = Date.now();
+          currentScene = msg.scene || 'ExteriorScene';
+
+          // Notificar a TODOS en la sala del cambio de escena
+          // El cliente decidirá si mostrar/ocultar según su escena actual
+          broadcast(currentRoom, {
+            type: 'playerSceneChange',
+            id: clientId,
+            name: playerName,
+            scene: currentScene,
+            x: msg.x || 400,
+            y: msg.y || 400
+          }, clientId);
+
+          console.log(`🔄 ${playerName} cambió escena: ${oldScene} → ${currentScene}`);
           break;
         }
 
         case 'chat': {
           if (!currentRoom) return;
           const room = getRoom(currentRoom);
-          const chatMsg = { id:genId(),senderId:clientId,name:playerName,text:msg.text,timestamp:Date.now() };
+          const p = room.players.get(clientId);
+          const chatMsg = {
+            id: genId(),
+            senderId: clientId,
+            name: playerName,
+            text: msg.text,
+            scene: p ? p.scene : currentScene,
+            timestamp: Date.now()
+          };
           room.messages.push(chatMsg);
           if (room.messages.length > 50) room.messages.shift();
-          broadcast(currentRoom, { type:'chatMessage', ...chatMsg });
+
+          // Broadcast a TODOS en la sala (cliente filtra por escena)
+          broadcast(currentRoom, {
+            type: 'chatMessage',
+            ...chatMsg
+          });
           break;
         }
 
         case 'ping':
-          ws.send(JSON.stringify({ type:'pong', timestamp:Date.now() }));
+          ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
           break;
       }
     } catch(e) { console.error('WS msg error:', e.message); }
@@ -231,9 +338,17 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     if (currentRoom) {
-      getRoom(currentRoom).players.delete(clientId);
-      broadcast(currentRoom, { type:'playerLeft', id:clientId, name:playerName });
-      console.log(`👋 ${playerName} desconectado`);
+      const room = getRoom(currentRoom);
+      const p = room.players.get(clientId);
+      if (p) {
+        room.players.delete(clientId);
+        broadcast(currentRoom, {
+          type: 'playerLeft',
+          id: clientId,
+          name: playerName
+        });
+        console.log(`👋 ${playerName} desconectado de ${currentRoom}`);
+      }
     }
   });
 
@@ -243,7 +358,7 @@ wss.on('connection', (ws) => {
 console.log('🟢 WebSocket listo');
 
 // ============================================================
-// ARRANQUE — Railway usa process.env.PORT automáticamente
+// ARRANQUE
 // ============================================================
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {

@@ -140,26 +140,103 @@ class BaseScene extends Phaser.Scene {
         }
         this.chatInput = null;
         this.isChatOpen = false;
+
+        // Tecla T para abrir chat
         this.chatKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
-        this.chatKey.on('down', () => { if (!this.isChatOpen) this.openChatInput(); });
+        this.chatKey.on('down', () => { 
+            if (!this.isChatOpen) {
+                this.openChatInput();
+            }
+        });
+
+        // ESC para cerrar chat
         this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-        this.escKey.on('down', () => { if (this.isChatOpen) this.closeChatInput(); });
+        this.escKey.on('down', () => { 
+            if (this.isChatOpen) {
+                this.closeChatInput();
+            }
+        });
     }
 
     openChatInput() {
         if (this.isChatOpen) return;
         this.isChatOpen = true;
-        if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+
+        // Detener movimiento del jugador
+        if (this.player && this.player.body) {
+            this.player.body.setVelocity(0, 0);
+        }
+
+        // SOLTAR todas las teclas de movimiento en Phaser
+        // para que no interfieran con la escritura
+        this.releaseGameKeys();
+
+        // Mostrar overlay de chat
         const overlay = document.getElementById('game-chat-overlay');
-        if (overlay) { overlay.style.display = 'flex'; document.getElementById('game-chat-input').focus(); }
+        if (overlay) { 
+            overlay.style.display = 'flex'; 
+            const input = document.getElementById('game-chat-input');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+        }
     }
 
     closeChatInput() {
         this.isChatOpen = false;
+
         const overlay = document.getElementById('game-chat-overlay');
         if (overlay) overlay.style.display = 'none';
+
+        // Devolver foco al canvas de Phaser
         const canvas = document.querySelector('#game-container canvas');
         if (canvas) canvas.focus();
+    }
+
+    releaseGameKeys() {
+        // Soltar teclas de movimiento para que no interfieran con el chat
+        if (!this.input || !this.input.keyboard) return;
+
+        const keysToRelease = [
+            Phaser.Input.Keyboard.KeyCodes.W,
+            Phaser.Input.Keyboard.KeyCodes.A,
+            Phaser.Input.Keyboard.KeyCodes.S,
+            Phaser.Input.Keyboard.KeyCodes.D,
+            Phaser.Input.Keyboard.KeyCodes.UP,
+            Phaser.Input.Keyboard.KeyCodes.DOWN,
+            Phaser.Input.Keyboard.KeyCodes.LEFT,
+            Phaser.Input.Keyboard.KeyCodes.RIGHT,
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+        ];
+
+        keysToRelease.forEach(keyCode => {
+            const key = this.input.keyboard.getKey(keyCode);
+            if (key && key.isDown) {
+                key.isDown = false;
+                key.isUp = true;
+            }
+        });
+
+        // Soltar cursores
+        if (this.cursors) {
+            ['up', 'down', 'left', 'right', 'space'].forEach(dir => {
+                if (this.cursors[dir]) {
+                    this.cursors[dir].isDown = false;
+                    this.cursors[dir].isUp = true;
+                }
+            });
+        }
+
+        // Soltar WASD
+        if (this.wasd) {
+            ['up', 'down', 'left', 'right', 'space'].forEach(dir => {
+                if (this.wasd[dir]) {
+                    this.wasd[dir].isDown = false;
+                    this.wasd[dir].isUp = true;
+                }
+            });
+        }
     }
 
     sendChatMessage(text) {
