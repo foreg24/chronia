@@ -292,7 +292,6 @@ wss.on('connection', (ws) => {
           currentScene = msg.scene || 'ExteriorScene';
 
           // Notificar a TODOS en la sala del cambio de escena
-          // El cliente decidirá si mostrar/ocultar según su escena actual
           broadcast(currentRoom, {
             type: 'playerSceneChange',
             id: clientId,
@@ -302,9 +301,27 @@ wss.on('connection', (ws) => {
             y: msg.y || 400
           }, clientId);
 
-          console.log(`🔄 ${playerName} cambió escena: ${oldScene} → ${currentScene}`);
+          // Responder al propio cliente con los jugadores ya presentes en la nueva escena
+          // (para que vea a quienes ya estaban ahí)
+          const playersInNewScene = [];
+          room.players.forEach((p, id) => {
+            if (id !== clientId && p.scene === currentScene) {
+              playersInNewScene.push({ id: p.id, name: p.name, x: p.x, y: p.y, scene: p.scene });
+            }
+          });
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'sceneInit',
+              players: playersInNewScene
+            }));
+          }
+
+          console.log(`🔄 ${playerName} cambió escena: ${oldScene} → ${currentScene} (${playersInNewScene.length} jugadores presentes)`);
           break;
         }
+
+          // Notificar a TODOS en la sala del cambio de escena
+          // El cliente decidirá si mostrar/ocultar según su escena actual
 
         case 'chat': {
           if (!currentRoom) return;

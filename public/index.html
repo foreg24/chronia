@@ -189,7 +189,23 @@
           <p>Time Traveler RPG</p>
           <span class="placeholder-sub">Viaja por las épocas de la historia del software</span>
           <p></p>
-          <button class="start-game-btn" onclick="startGame()">▶ INICIAR JUEGO</button>
+          <div style="width:100%;max-width:280px;margin:0 auto 0.8rem auto;">
+            <input type="text" id="pregame-name-input" maxlength="15"
+              placeholder="Tu nombre de viajero..."
+              style="width:100%;padding:0.6rem 1rem;background:rgba(255,255,255,0.05);
+                     border:1px solid rgba(0,245,255,0.4);border-radius:6px;
+                     color:#e0e8f0;font-family:'VT323',monospace;font-size:1.15rem;
+                     outline:none;text-align:center;caret-color:#00f5ff;
+                     box-sizing:border-box;transition:border-color 0.2s;"
+              oninput="document.getElementById('pregame-name-error').style.display='none'"
+            >
+            <div id="pregame-name-error"
+              style="display:none;font-family:'VT323',monospace;font-size:0.95rem;
+                     color:#ff6b35;margin-top:0.4rem;text-align:center;">
+              ⚠ Escribe tu nombre antes de entrar
+            </div>
+          </div>
+          <button class="start-game-btn" onclick="startGameWithName()">▶ INICIAR JUEGO</button>
         </div>
       </div>
     </div>
@@ -199,7 +215,7 @@
         <button class="d-btn d-up" id="btn-up">▲</button>
         <div class="d-middle">
           <button class="d-btn d-left" id="btn-left">◀</button>
-          <button class="d-btn d-center">●</button>
+          <button class="d-btn d-center" id="btn-chat">💬</button>
           <button class="d-btn d-right" id="btn-right">▶</button>
         </div>
         <button class="d-btn d-down" id="btn-down">▼</button>
@@ -273,38 +289,76 @@
 
 
 <script>
-// Manejo del chat del juego
+// ============================================================
+// NOMBRE ANTES DE INICIAR JUEGO
+// ============================================================
+function startGameWithName() {
+  const input = document.getElementById('pregame-name-input');
+  const errorEl = document.getElementById('pregame-name-error');
+  if (!input) { startGame(); return; }
+  const name = input.value.trim();
+  if (!name) {
+    errorEl.style.display = 'block';
+    input.focus();
+    return;
+  }
+  // Guardar nombre y arrancar
+  if (window.multiplayer) {
+    window.multiplayer.playerName = name.substring(0, 15);
+  }
+  localStorage.setItem('playerName', name.substring(0, 15));
+  startGame();
+}
+
+// ============================================================
+// MANEJO DEL CHAT DEL JUEGO
+// ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-  const chatInput = document.getElementById('game-chat-input');
-  const chatSend = document.getElementById('game-chat-send');
+  const chatInput  = document.getElementById('game-chat-input');
+  const chatSend   = document.getElementById('game-chat-send');
   const chatOverlay = document.getElementById('game-chat-overlay');
   const playerCount = document.getElementById('game-player-count');
   const playerCountText = document.getElementById('player-count-text');
   const connStatus = document.getElementById('game-connection-status');
 
+  // Pre-llenar nombre si ya existe
+  const savedName = localStorage.getItem('playerName');
+  if (savedName) {
+    const preInput = document.getElementById('pregame-name-input');
+    if (preInput) preInput.value = savedName;
+  }
+
+  function closeChatOverlay() {
+    chatOverlay.style.display = 'none';
+    const canvas = document.querySelector('#game-container canvas');
+    if (canvas) canvas.focus();
+    const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
+    if (activeScene) activeScene.isChatOpen = false;
+  }
+
+  function openChatOverlay() {
+    if (!window.gameInstance) return;
+    chatOverlay.style.display = 'flex';
+    setTimeout(() => { if (chatInput) chatInput.focus(); }, 50);
+    const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
+    if (activeScene) activeScene.isChatOpen = true;
+  }
+
   if (chatInput && chatSend) {
     chatInput.addEventListener('keydown', function(e) {
+      // Evitar que las teclas del chat lleguen al juego
+      e.stopPropagation();
       if (e.key === 'Enter') {
         e.preventDefault();
         const text = chatInput.value.trim();
         if (text && window.multiplayer) {
           window.multiplayer.sendChat(text);
-          chatInput.value = '';
         }
-        // Cerrar chat
-        chatOverlay.style.display = 'none';
-        const canvas = document.querySelector('#game-container canvas');
-        if (canvas) canvas.focus();
-        // Notificar a la escena activa
-        const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
-        if (activeScene) activeScene.isChatOpen = false;
+        chatInput.value = '';
+        closeChatOverlay();
       }
       if (e.key === 'Escape') {
-        chatOverlay.style.display = 'none';
-        const canvas = document.querySelector('#game-container canvas');
-        if (canvas) canvas.focus();
-        const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
-        if (activeScene) activeScene.isChatOpen = false;
+        closeChatOverlay();
       }
     });
 
@@ -312,28 +366,73 @@ document.addEventListener('DOMContentLoaded', function() {
       const text = chatInput.value.trim();
       if (text && window.multiplayer) {
         window.multiplayer.sendChat(text);
-        chatInput.value = '';
       }
-      chatOverlay.style.display = 'none';
-      const canvas = document.querySelector('#game-container canvas');
-      if (canvas) canvas.focus();
-      const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
-      if (activeScene) activeScene.isChatOpen = false;
+      chatInput.value = '';
+      closeChatOverlay();
     });
   }
 
+  // Tecla T global para abrir chat (funciona aunque el canvas no tenga foco)
+  document.addEventListener('keydown', function(e) {
+    if (!window.gameInstance) return;
+    // Solo si la sección Play está activa
+    const playSection = document.getElementById('play');
+    if (!playSection || !playSection.classList.contains('active')) return;
+    // No disparar si hay un input enfocado
+    if (document.activeElement && (
+        document.activeElement.tagName === 'INPUT' ||
+        document.activeElement.tagName === 'TEXTAREA')) return;
+
+    if (e.code === 'KeyT') {
+      e.preventDefault();
+      const overlay = document.getElementById('game-chat-overlay');
+      if (overlay && overlay.style.display === 'none') {
+        openChatOverlay();
+      }
+    }
+  });
+
+  // Botón chat móvil (btn-chat = d-center con id)
+  const btnChat = document.getElementById('btn-chat');
+  if (btnChat) {
+    const handleChatBtn = (e) => {
+      e.preventDefault();
+      openChatOverlay();
+    };
+    btnChat.addEventListener('touchstart', handleChatBtn, { passive: false });
+    btnChat.addEventListener('mousedown', handleChatBtn);
+  }
+
+  // ============================================================
+  // CONTADOR DE JUGADORES — solo visible en sección Play
+  // ============================================================
+  function isPlayActive() {
+    const playSection = document.getElementById('play');
+    return playSection && playSection.classList.contains('active');
+  }
+
   // Actualizar contador de jugadores
-  if (window.multiplayer) {
+  function setupMultiplayerCallbacks() {
+    if (!window.multiplayer) return;
     window.multiplayer.onPlayerCountChange = function(count) {
+      if (!isPlayActive()) return;
       if (playerCount && playerCountText) {
         playerCount.style.display = 'flex';
         playerCountText.textContent = count + ' viajero' + (count > 1 ? 's' : '');
       }
     };
   }
+  setupMultiplayerCallbacks();
+  // Retry por si multiplayer no está listo aún
+  setTimeout(setupMultiplayerCallbacks, 1500);
 
-  // Mostrar estado de conexión
+  // Mostrar/ocultar indicadores según sección activa
   function updateConnectionStatus() {
+    if (!isPlayActive()) {
+      if (playerCount) playerCount.style.display = 'none';
+      if (connStatus) connStatus.style.display = 'none';
+      return;
+    }
     if (!connStatus) return;
     if (window.multiplayer && window.multiplayer.connected) {
       connStatus.style.display = 'none';
@@ -346,17 +445,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   setInterval(updateConnectionStatus, 2000);
 
-  // Mostrar controles móviles y contador cuando se inicia el juego
-  const observer = new MutationObserver(function(mutations) {
-    const playSection = document.getElementById('play');
-    if (playSection && playSection.classList.contains('active')) {
-      if (playerCount && window.multiplayer && window.multiplayer.connected) {
-        playerCount.style.display = 'flex';
-      }
-      updateConnectionStatus();
-    } else {
-      if (playerCount) playerCount.style.display = 'none';
-      if (connStatus) connStatus.style.display = 'none';
+  // Observer para cuando cambia la sección activa
+  const observer = new MutationObserver(function() {
+    updateConnectionStatus();
+    // Si salimos de Play, cerrar chat si está abierto
+    if (!isPlayActive() && chatOverlay) {
+      chatOverlay.style.display = 'none';
     }
   });
 
@@ -364,6 +458,10 @@ document.addEventListener('DOMContentLoaded', function() {
   if (playSection) {
     observer.observe(playSection, { attributes: true, attributeFilter: ['class'] });
   }
+  // Observar todos los sections también
+  document.querySelectorAll('.section').forEach(sec => {
+    observer.observe(sec, { attributes: true, attributeFilter: ['class'] });
+  });
 });
 </script>
 

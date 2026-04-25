@@ -134,9 +134,13 @@ class BaseScene extends Phaser.Scene {
     // === MULTIPLAYER INTEGRATION ===
     setupMultiplayer() {
         if (window.multiplayer && !window.multiplayer.connected) {
+            // No conectado: iniciar conexión. El onopen hará joinRoom.
             window.multiplayer.connect(this);
         } else if (window.multiplayer && window.multiplayer.connected) {
-            window.multiplayer.joinRoom(this);
+            // Ya conectado: solo unirse si cambiamos de escena
+            if (window.multiplayer.currentScene !== this.scene.key) {
+                window.multiplayer.joinRoom(this);
+            }
         }
         this.chatInput = null;
         this.isChatOpen = false;
@@ -245,9 +249,16 @@ class BaseScene extends Phaser.Scene {
     }
 
     notifySceneChange(newSceneKey) {
-        const roomMap = { 'ExteriorScene': 'exterior', 'CasaScene': 'casa', 'FuturisticScene': 'futuristic', 'EpochSelectorScene': 'selector', 'EpochScene': 'epoch' };
         if (window.multiplayer && window.multiplayer.connected) {
-            window.multiplayer.changeScene(roomMap[newSceneKey] || 'exterior', newSceneKey, this.player ? this.player.x : 400, this.player ? this.player.y : 400);
+            window.multiplayer.changeScene('world', newSceneKey, this.player ? this.player.x : 400, this.player ? this.player.y : 400);
+        }
+    }
+
+    notifyEpochSceneChange(epochId) {
+        // Para EpochScene usamos 'EpochScene_<epochId>' como identificador único
+        const sceneKey = 'EpochScene_' + epochId;
+        if (window.multiplayer && window.multiplayer.connected) {
+            window.multiplayer.changeScene('world', sceneKey, this.player ? this.player.x : 400, this.player ? this.player.y : 400);
         }
     }
 }
@@ -1445,7 +1456,7 @@ class EpochSelectorScene extends BaseScene {
     }
     
     selectEpoch(epoch) {
-        this.notifySceneChange('EpochScene');
+        this.notifyEpochSceneChange(epoch.id);  // Usa 'EpochScene_grecia' etc.
         // Efecto de selección
         this.cameras.main.shake(100, 0.01);
         
@@ -1564,10 +1575,37 @@ class EpochScene extends BaseScene {
         // Animación de entrada
         this.cameras.main.fadeIn(500);
         
-        // Setup multiplayer
-        this.setupMultiplayer();
+        // Setup multiplayer con clave de época específica
+        this.setupEpochMultiplayer();
     }
     
+    setupEpochMultiplayer() {
+        // La clave de escena incluye el id de época: 'EpochScene_grecia' etc.
+        const epochSceneKey = 'EpochScene_' + (this.epochData ? this.epochData.id : 'unknown');
+
+        if (window.multiplayer && !window.multiplayer.connected) {
+            window.multiplayer.connect(this);
+        } else if (window.multiplayer && window.multiplayer.connected) {
+            if (window.multiplayer.currentScene !== epochSceneKey) {
+                window.multiplayer.changeScene('world', epochSceneKey,
+                    this.player ? this.player.x : 400,
+                    this.player ? this.player.y : 400);
+            }
+        }
+
+        this.chatInput = null;
+        this.isChatOpen = false;
+
+        this.chatKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+        this.chatKey.on('down', () => {
+            if (!this.isChatOpen) this.openChatInput();
+        });
+        this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        this.escKey.on('down', () => {
+            if (this.isChatOpen) this.closeChatInput();
+        });
+    }
+
     getEpochBgColor() {
         const colors = {
             mesopotamia: '#1a1205',

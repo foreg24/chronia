@@ -22,6 +22,7 @@ class MultiplayerManager {
   }
 
   connect(scene) {
+    this._intentionalDisconnect = false;  // Nueva conexión, resetear flag
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}`;
 
@@ -33,11 +34,11 @@ class MultiplayerManager {
         this.connected = true;
         this.reconnectAttempts = 0;
 
-        if (!this.playerName) {
-          this.askForName(scene);
-        } else {
-          this.joinRoom(scene);
-        }
+        if (!this.playerName) this.playerName = 'Viajero';
+
+        // Unirse a la sala desde la escena activa actual
+        const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive()) || scene;
+        this.joinRoom(activeScene);
 
         this.pingInterval = setInterval(() => {
           if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -49,7 +50,9 @@ class MultiplayerManager {
       this.ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
-          this.handleMessage(msg, scene);
+          // Siempre usar la escena activa actual, no la del closure (puede ser vieja)
+          const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive()) || scene;
+          this.handleMessage(msg, activeScene);
         } catch (e) {
           console.error('Error parseando mensaje:', e);
         }
@@ -61,11 +64,14 @@ class MultiplayerManager {
         this.cleanupPlayers(scene);
         clearInterval(this.pingInterval);
 
-        if (this.reconnectAttempts < this.maxReconnect) {
+        // Solo reconectar si NO fue una desconexión intencional (ej: cambio de sección)
+        if (!this._intentionalDisconnect && this.reconnectAttempts < this.maxReconnect) {
           this.reconnectAttempts++;
           setTimeout(() => {
-            console.log(`🔄 Reconectando... intento ${this.reconnectAttempts}`);
-            this.connect(scene);
+            if (!this._intentionalDisconnect) {
+              console.log(`🔄 Reconectando... intento ${this.reconnectAttempts}`);
+              this.connect(scene);
+            }
           }, 2000 * this.reconnectAttempts);
         }
       };
@@ -80,88 +86,15 @@ class MultiplayerManager {
     }
   }
 
-  askForName(scene) {
-    if (document.getElementById('name-modal-overlay')) return;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'name-modal-overlay';
-    overlay.style.cssText = `
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 99999; backdrop-filter: blur(8px);
-    `;
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      background: #0a0a12; border: 2px solid var(--accent, #00f5ff);
-      border-radius: 12px; padding: 2rem; text-align: center;
-      max-width: 380px; width: 90%; box-shadow: 0 0 40px rgba(0,245,255,0.3);
-    `;
-
-    modal.innerHTML = `
-      <div style="font-family: 'Press Start 2P', monospace; font-size: 0.55rem; color: var(--accent, #00f5ff); margin-bottom: 1.5rem; line-height: 1.8;">
-        🎮 ENTRAR AL MUNDO
-      </div>
-      <div style="font-family: 'VT323', monospace; font-size: 1.1rem; color: #8892a4; margin-bottom: 1.5rem;">
-        Elige tu nombre de viajero temporal
-      </div>
-      <input type="text" id="player-name-input" maxlength="15" placeholder="Tu nombre..."
-        style="width: 100%; padding: 0.7rem 1rem; background: rgba(255,255,255,0.05);
-               border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
-               color: #e0e8f0; font-family: 'VT323', monospace; font-size: 1.1rem;
-               outline: none; margin-bottom: 1rem; text-align: center;
-               caret-color: var(--accent, #00f5ff);"
-        value="${this.playerName}">
-      <button id="name-submit-btn"
-        style="width: 100%; padding: 0.7rem; background: var(--accent, #00f5ff);
-               color: #000; border: none; border-radius: 6px;
-               font-family: 'Press Start 2P', monospace; font-size: 0.4rem;
-               cursor: pointer; box-shadow: 0 0 15px rgba(0,245,255,0.4);
-               transition: all 0.2s;">
-        ENTRAR ➤
-      </button>
-      <div style="font-family: 'VT323', monospace; font-size: 0.85rem; color: #4a5568; margin-top: 0.8rem;">
-        Máximo 15 caracteres
-      </div>
-    `;
-
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    const input = document.getElementById('player-name-input');
-    const btn = document.getElementById('name-submit-btn');
-    input.focus();
-
-    const submit = () => {
-      const name = input.value.trim() || 'Viajero';
-      this.playerName = name.substring(0, 15);
-      localStorage.setItem('playerName', this.playerName);
-      overlay.remove();
-
-      const currentScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
-      if (currentScene) {
-        this.joinRoom(currentScene);
-      }
-    };
-
-    btn.addEventListener('click', submit);
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submit();
-    });
-  }
+  // El nombre se captura en el placeholder antes de iniciar el juego
+  // Ver startGameWithName() en index.html
 
   joinRoom(scene) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
-    const roomMap = {
-      'ExteriorScene': 'exterior',
-      'CasaScene': 'casa',
-      'FuturisticScene': 'futuristic',
-      'EpochSelectorScene': 'selector',
-      'EpochScene': 'epoch'
-    };
-
-    this.currentRoom = roomMap[scene.scene.key] || 'exterior';
+    // Todos los jugadores están en la misma sala 'world'
+    // El filtrado por escena es 100% del lado del cliente
+    this.currentRoom = 'world';
     this.currentScene = scene.scene.key;
 
     const x = scene.player ? scene.player.x : 400;
@@ -170,7 +103,7 @@ class MultiplayerManager {
     this.ws.send(JSON.stringify({
       type: 'join',
       name: this.playerName,
-      room: this.currentRoom,
+      room: 'world',
       scene: scene.scene.key,
       x: x,
       y: y
@@ -179,6 +112,38 @@ class MultiplayerManager {
 
   handleMessage(msg, scene) {
     switch (msg.type) {
+      case 'sceneInit': {
+        // El servidor nos dice quiénes ya estaban en la escena a la que entramos.
+        // Problema: este mensaje puede llegar mientras Phaser aún está en transición
+        // (la escena destino todavía no está activa). Usamos un retry con intervalo.
+        if (msg.players && msg.players.length > 0) {
+          const targetScene = this.currentScene;  // La escena a la que queremos llegar
+          const players = msg.players;
+          let attempts = 0;
+          const maxAttempts = 20;  // hasta ~2 segundos
+
+          const tryCreate = () => {
+            const active = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
+            // Esperar hasta que la escena activa sea la correcta
+            if (active && (active.scene.key === targetScene ||
+                // Para EpochScene todas comparten el mismo key 'EpochScene'
+                (targetScene.startsWith('EpochScene_') && active.scene.key === 'EpochScene'))) {
+              players.forEach(p => {
+                if (!this.players.has(p.id)) {
+                  this.createPlayerSprite(p, active);
+                }
+              });
+              this.updatePlayerCount();
+            } else if (attempts < maxAttempts) {
+              attempts++;
+              setTimeout(tryCreate, 100);
+            }
+          };
+          tryCreate();
+        }
+        break;
+      }
+
       case 'init': {
         this.id = msg.id;
         // Limpiar jugadores existentes
@@ -191,14 +156,7 @@ class MultiplayerManager {
           }
         });
 
-        // Cargar mensajes previos de la misma escena
-        if (msg.messages) {
-          msg.messages.forEach(m => {
-            if (m.scene === this.currentScene) {
-              this.showChatBubble(m.senderId, m.name, m.text, scene);
-            }
-          });
-        }
+        // NO cargar mensajes históricos — evita spam de mensajes viejos al volver
         this.updatePlayerCount();
         break;
       }
@@ -206,9 +164,19 @@ class MultiplayerManager {
       case 'playerJoined': {
         // Solo mostrar si está en la MISMA escena
         if (msg.id !== this.id && msg.scene === this.currentScene) {
+          // Si ya existe un sprite de este jugador (reconexión rápida), eliminarlo primero
+          if (this.players.has(msg.id)) {
+            this.removePlayer(msg.id, scene);
+          }
           this.createPlayerSprite(msg, scene);
           this.showSystemMessage(`${msg.name} se ha unido`, scene);
           this.updatePlayerCount();
+        } else if (msg.id !== this.id && msg.scene !== this.currentScene) {
+          // Si está en otra escena y teníamos su sprite por reconexión, limpiarlo
+          if (this.players.has(msg.id)) {
+            this.removePlayer(msg.id, scene);
+            this.updatePlayerCount();
+          }
         }
         break;
       }
@@ -538,16 +506,15 @@ class MultiplayerManager {
     }
 
     this.currentScene = newScene;
+    this.currentRoom = 'world';
 
     this.ws.send(JSON.stringify({
       type: 'sceneChange',
-      room: newRoom,
+      room: 'world',
       scene: newScene,
       x: x,
       y: y
     }));
-
-    this.currentRoom = newRoom;
   }
 
   cleanupPlayers(scene) {
@@ -588,11 +555,15 @@ class MultiplayerManager {
   }
 
   disconnect() {
+    this._intentionalDisconnect = true;  // Evita auto-reconexión
     if (this.ws) {
+      this.ws.onclose = null;  // Quitar handler antes de cerrar
       this.ws.close();
+      this.ws = null;
     }
     clearInterval(this.pingInterval);
     this.connected = false;
+    this.reconnectAttempts = 0;
     this.players.clear();
   }
 }

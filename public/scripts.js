@@ -1805,16 +1805,7 @@ function initGame() {
   window.gameInstance = gameInstance;
 
   setupMobileControls();
-
-  // Inicializar multiplayer después de un breve delay para que Phaser esté listo
-  setTimeout(() => {
-    if (typeof MultiplayerManager !== 'undefined' && window.multiplayer) {
-      const activeScene = gameInstance.scene.scenes.find(s => s.scene.isActive());
-      if (activeScene) {
-        window.multiplayer.connect(activeScene);
-      }
-    }
-  }, 1000);
+  // El multiplayer se conecta desde setupMultiplayer() de la primera escena Phaser
 }
 
 function showGamePlaceholder(msg) {
@@ -1918,36 +1909,8 @@ function setupMobileControls() {
     });
   });
 
-  // Botón CENTRO del D-Pad (●) para abrir chat
-  const centerBtn = document.querySelector('.d-center');
-  if (centerBtn) {
-    centerBtn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
-      if (activeScene && activeScene.openChatInput) {
-        activeScene.openChatInput();
-      }
-      centerBtn.classList.add('pressed');
-      playSfx('click');
-    }, { passive: false });
-
-    centerBtn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      centerBtn.classList.remove('pressed');
-    }, { passive: false });
-
-    centerBtn.addEventListener('mousedown', () => {
-      const activeScene = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
-      if (activeScene && activeScene.openChatInput) {
-        activeScene.openChatInput();
-      }
-      centerBtn.classList.add('pressed');
-    });
-
-    centerBtn.addEventListener('mouseup', () => {
-      centerBtn.classList.remove('pressed');
-    });
-  }
+  // Botón CHAT (centro del D-Pad, id=btn-chat) — manejado en index.html
+  // No duplicar aquí para evitar conflictos
 }
 
 function getKeyCode(key) {
