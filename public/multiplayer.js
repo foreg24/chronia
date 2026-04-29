@@ -173,7 +173,7 @@ class MultiplayerManager {
     const textureKey = gender === 'f' ? 'chica' : 'chico';
     let body;
     if (scene.textures && scene.textures.exists(textureKey)) {
-      body = scene.add.image(0, 0, textureKey).setDisplaySize(32, 48);
+      body = scene.add.image(0, 0, textureKey).setDisplaySize(115, 115);
     } else {
       body = scene.add.rectangle(0, 0, 16, 24, gender === 'f' ? 0xbf5fff : 0xff6b35);
     }

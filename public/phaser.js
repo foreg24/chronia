@@ -303,7 +303,7 @@ class ExteriorScene extends BaseScene {
         this.createPixelSmoke(458, 124);   // <-- COORDENADA CHIMENEA EXTERIOR (ajustable)
 
         // Límite inferior del mundo (borde)
-        this.physics.world.setBounds(0, 285, 800, 165);
+        this.physics.world.setBounds(0, 300, 800, 165);
 
         // Jugador
         this.player = this.createPlayer(400, 400);
@@ -316,9 +316,9 @@ class ExteriorScene extends BaseScene {
         this.physics.add.existing(this.doorZone, true);
 
         // Indicador de puerta
-        this.doorIndicator = this.add.text(400, 245, '▼ ENTRAR', {
+        this.doorIndicator = this.add.text(405, 235, '▼ ENTRAR', {
             fontFamily: '"Press Start 2P", monospace',
-            fontSize: '8px', color: '#00f5ff'
+            fontSize: '6px', color: '#00f5ff'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
 
         // Diálogo inicial
@@ -408,14 +408,20 @@ class CasaScene extends BaseScene {
 
         // ─── BLOQUES DE COLISIÓN INVISIBLES (ajustables) ───
         // Escritorio/mesa: aprox x=400, y=200, 120x40
-        this.createCollisionBlock(400, 200, 120, 40);   // <-- ESCRITORIO (ajustable)
+        this.createCollisionBlock(145, 330, 260, 140);   // <-- ESCRITORIO (ajustable)
         // Sofá: aprox x=550, y=320, 140x50
-        this.createCollisionBlock(550, 320, 140, 50);   // <-- SOFÁ (ajustable)
+        this.createCollisionBlock(658, 240, 206, 80);   // <-- SOFÁ (ajustable)
+        // TV: aprox x=550, y=320, 140x50
+        this.createCollisionBlock(660, 310, 157, 96);   // <-- TV (ajustable)
+        // Chimenea: aprox x=550, y=320, 140x50
+        this.createCollisionBlock(210, 158, 120, 40);   // <-- Chimenes (ajustable)
+        // Mesa: aprox x=550, y=320, 140x50
+        this.createCollisionBlock(410, 158, 240, 50);   // <-- Mesa (ajustable)
         // Estantería: aprox x=650, y=150, 80x120
-        this.createCollisionBlock(650, 150, 80, 120);   // <-- ESTANTERÍA (ajustable)
+        this.createCollisionBlock(663, 160, 110, 40);   // <-- ESTANTERÍA (ajustable)
 
         // Límites del mundo (interior de la habitación)
-        this.physics.world.setBounds(50, 180, 700, 250);
+        this.physics.world.setBounds(0, 158, 800, 250);
 
         // --- PUERTA SECRETA (rectángulo transparente, ajustable) ---
         // Aprox x=100, y=150
@@ -423,7 +429,7 @@ class CasaScene extends BaseScene {
         this.secretZone.setDepth(5);
         this.physics.add.existing(this.secretZone, true);
 
-        this.secretIndicator = this.add.text(100, 115, '?', {
+        this.secretIndicator = this.add.text(93, 100, '?', {
             fontFamily: '"Press Start 2P", monospace',
             fontSize: '14px', color: '#00f5ff'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
@@ -571,19 +577,20 @@ class FuturisticScene extends BaseScene {
 
         // Partículas de la máquina (pixel)
         // COORDENADA DE REFERENCIA: x=400, y=210 (ajustable)
-        this.createMachineParticles(400, 210);  // <-- COORDENADA PARTÍCULAS MÁQUINA (ajustable)
+        this.createMachineParticles(405, 175);  // <-- COORDENADA PARTÍCULAS MÁQUINA (ajustable)
 
         // Lucecitas de cada máquina (ajustables)
         this.createMachineLights([
-            { x: 160, y: 215, color: 0x00f5ff },   // <-- Máquina izq (ajustable)
-            { x: 640, y: 215, color: 0x39ff14 },   // <-- Máquina der (ajustable)
+            { x: 147, y: 180, color: 0x00f5ff },   // <-- Máquina izq (ajustable)
+            { x: 647, y: 180, color: 0x39ff14 },   // <-- Máquina der (ajustable)
         ]);
 
         // Nombres/etiquetas sobre cada máquina (ajustables)
         this.createMachineLabels([
-            { x: 160, y: 155, text: 'DATOS TEMPORALES' },  // <-- (ajustable)
-            { x: 640, y: 155, text: 'COORDENADAS' },        // <-- (ajustable)
+            { x: 148, y: 80, text: 'DATOS TEMPORALES' },  // <-- (ajustable)
+            { x: 648, y: 80, text: 'COORDENADAS' },        // <-- (ajustable)
         ]);
+
 
         // Jugador
         this.player = this.createPlayer(400, 370);
@@ -598,7 +605,7 @@ class FuturisticScene extends BaseScene {
         this.physics.add.existing(machineBody, true);
         this._machineBody = machineBody;
 
-        this.machineIndicator = this.add.text(400, 155, '▼ ACTIVAR MÁQUINA', {
+        this.machineIndicator = this.add.text(400, 100, '▼ ACTIVAR MÁQUINA', {
             fontFamily: '"Press Start 2P", monospace',
             fontSize: '7px', color: '#00f5ff'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
@@ -619,7 +626,7 @@ class FuturisticScene extends BaseScene {
             space: Phaser.Input.Keyboard.KeyCodes.SPACE
         });
 
-        this.physics.world.setBounds(30, 225, 740, 210);
+        this.physics.world.setBounds(30, 200, 740, 210);
 
         // Salida
         this.exitZone = this.add.rectangle(400, 430, 80, 20, 0xff0000, 0);
