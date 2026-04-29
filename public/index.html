@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Por Desocupe 123</title>
+  <title>ChronIA</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="multiplayer.css">
   <!-- Phaser para el juego -->
@@ -35,8 +35,8 @@
   <a class="nav-brand-pill" href="#" onclick="nav('home');return false;">
     <div class="nav-brand-icon" id="nav-icon">⏱</div>
     <div class="nav-brand-text">
-      <span class="nav-brand-name">Introducción</span>
-      <span class="nav-era" id="nav-era">Ing. de Software</span>
+      <span class="nav-brand-name">Introducción a la</span>
+      <span class="nav-era" id="nav-era">Ing. de Software - SIGLO XXI</span>
     </div>
   </a>
 
@@ -189,22 +189,34 @@
           <p>Time Traveler RPG</p>
           <span class="placeholder-sub">Viaja por las épocas de la historia del software</span>
           <p></p>
-          <div style="width:100%;max-width:280px;margin:0 auto 0.8rem auto;">
-            <input type="text" id="pregame-name-input" maxlength="15"
-              placeholder="Tu nombre de viajero..."
-              style="width:100%;padding:0.6rem 1rem;background:rgba(255,255,255,0.05);
-                     border:1px solid rgba(0,245,255,0.4);border-radius:6px;
-                     color:#e0e8f0;font-family:'VT323',monospace;font-size:1.15rem;
-                     outline:none;text-align:center;caret-color:#00f5ff;
-                     box-sizing:border-box;transition:border-color 0.2s;"
-              oninput="document.getElementById('pregame-name-error').style.display='none'"
-            >
-            <div id="pregame-name-error"
-              style="display:none;font-family:'VT323',monospace;font-size:0.95rem;
-                     color:#ff6b35;margin-top:0.4rem;text-align:center;">
-              ⚠ Escribe tu nombre antes de entrar
-            </div>
-          </div>
+          <div style="width:100%;max-width:320px;margin:0 auto 0.8rem auto;">
+  <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+    <input type="text" id="pregame-name-input" maxlength="15"
+      placeholder="Tu nombre de viajero..."
+      style="flex:1;padding:0.6rem 1rem;background:rgba(255,255,255,0.05);
+             border:1px solid rgba(0,245,255,0.4);border-radius:6px;
+             color:#e0e8f0;font-family:'VT323',monospace;font-size:1.15rem;
+             outline:none;text-align:center;caret-color:#00f5ff;
+             box-sizing:border-box;transition:border-color 0.2s;"
+      oninput="document.getElementById('pregame-name-error').style.display='none'"
+    >
+    <button id="gender-btn-m" onclick="selectGender('m')"
+      style="padding:0.5rem 0.7rem;font-size:1.3rem;background:rgba(0,245,255,0.08);
+             border:2px solid rgba(0,245,255,0.3);border-radius:6px;cursor:pointer;
+             transition:all 0.2s;opacity:0.6;"
+      title="Hombre">♂️</button>
+    <button id="gender-btn-f" onclick="selectGender('f')"
+      style="padding:0.5rem 0.7rem;font-size:1.3rem;background:rgba(191,95,255,0.08);
+             border:2px solid rgba(191,95,255,0.3);border-radius:6px;cursor:pointer;
+             transition:all 0.2s;opacity:0.6;"
+      title="Mujer">♀️</button>
+  </div>
+  <div id="pregame-name-error"
+    style="display:none;font-family:'VT323',monospace;font-size:0.95rem;
+           color:#ff6b35;margin-top:0.4rem;text-align:center;">
+    ⚠ Escribe tu nombre y elige tu género antes de entrar
+  </div>
+</div>
           <button class="start-game-btn" onclick="startGameWithName()">▶ INICIAR JUEGO</button>
         </div>
       </div>
@@ -256,7 +268,8 @@
 <!-- ============================================================ FOOTER -->
 <footer>
   <div class="footer-logo">⏱ CHRÓNIA — VIAJE EN EL TIEMPO</div>
-  <p class="footer-txt">© Jesús Forero - Introducción a la Ingeniería de Software</p>
+  <p class="footer-txt">© Jesús Forero, Carlos Rincón y Emily Arrieta</p>
+  <p class="footer-txt">Introducción a la Ingeniería de Software</p>
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -292,24 +305,45 @@
 // ============================================================
 // NOMBRE ANTES DE INICIAR JUEGO
 // ============================================================
+let selectedGender = localStorage.getItem('playerGender') || '';
+
+function selectGender(g) {
+  selectedGender = g;
+  localStorage.setItem('playerGender', g);
+  const btnM = document.getElementById('gender-btn-m');
+  const btnF = document.getElementById('gender-btn-f');
+  if (btnM && btnF) {
+    btnM.style.opacity = g === 'm' ? '1' : '0.4';
+    btnM.style.borderColor = g === 'm' ? '#00f5ff' : 'rgba(0,245,255,0.3)';
+    btnM.style.background = g === 'm' ? 'rgba(0,245,255,0.18)' : 'rgba(0,245,255,0.08)';
+    btnF.style.opacity = g === 'f' ? '1' : '0.4';
+    btnF.style.borderColor = g === 'f' ? '#bf5fff' : 'rgba(191,95,255,0.3)';
+    btnF.style.background = g === 'f' ? 'rgba(191,95,255,0.18)' : 'rgba(191,95,255,0.08)';
+  }
+}
+// Restaurar selección guardada al cargar
+document.addEventListener('DOMContentLoaded', function() {
+  if (selectedGender) selectGender(selectedGender);
+});
+
 function startGameWithName() {
   const input = document.getElementById('pregame-name-input');
   const errorEl = document.getElementById('pregame-name-error');
   if (!input) { startGame(); return; }
   const name = input.value.trim();
-  if (!name) {
+  if (!name || !selectedGender) {
     errorEl.style.display = 'block';
-    input.focus();
+    if (!name) input.focus();
     return;
   }
-  // Guardar nombre y arrancar
   if (window.multiplayer) {
     window.multiplayer.playerName = name.substring(0, 15);
+    window.multiplayer.playerGender = selectedGender;
   }
   localStorage.setItem('playerName', name.substring(0, 15));
+  localStorage.setItem('playerGender', selectedGender);
   startGame();
 }
-
 // ============================================================
 // MANEJO DEL CHAT DEL JUEGO
 // ============================================================
