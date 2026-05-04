@@ -178,7 +178,7 @@ class BaseScene extends Phaser.Scene {
                 y: y - Phaser.Math.Between(25, 45),
                 alpha: 0,
                 scaleX: Phaser.Math.FloatBetween(1.5, 2.5),
-                scaleY: Phaser.Math.FloatBetween(1.5, 2.5),
+                scaleY: Phaser.Math.FloatBetween(1.5, 8.5),
                 duration: Phaser.Math.Between(1500, 2500),
                 onComplete: () => puff.destroy()
             });
@@ -521,9 +521,9 @@ class CasaScene extends BaseScene {
         }
 
         const distToSecret = Phaser.Math.Distance.Between(this.player.x, this.player.y, 100, 150);
-        this.secretIndicator.setVisible(distToSecret < 80);
+        this.secretIndicator.setVisible(distToSecret < 60);
 
-        if (distToSecret < 60 && Phaser.Input.Keyboard.JustDown(this.wasd.space)) {
+        if (distToSecret < 20 && Phaser.Input.Keyboard.JustDown(this.wasd.space)) {
             this.enterFuturisticRoom();
         }
 
@@ -582,7 +582,7 @@ class FuturisticScene extends BaseScene {
         // Lucecitas de cada máquina (ajustables)
         this.createMachineLights([
             { x: 147, y: 180, color: 0x00f5ff },   // <-- Máquina izq (ajustable)
-            { x: 647, y: 180, color: 0x39ff14 },   // <-- Máquina der (ajustable)
+            { x: 647, y: 180, color: 0x00f5ff },   // <-- Máquina der (ajustable)
         ]);
 
         // Nombres/etiquetas sobre cada máquina (ajustables)
@@ -731,7 +731,7 @@ class FuturisticScene extends BaseScene {
         const distToMachine = Phaser.Math.Distance.Between(this.player.x, this.player.y, 400, 210);
         this.machineIndicator.setVisible(distToMachine < 60);
 
-        if (distToMachine < 50 && Phaser.Input.Keyboard.JustDown(this.wasd.space)) {
+        if (distToMachine < 10 && Phaser.Input.Keyboard.JustDown(this.wasd.space)) {
             this.activateTimeMachine();
         }
 
