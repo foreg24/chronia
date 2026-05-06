@@ -341,7 +341,7 @@ class ExteriorScene extends BaseScene {
         this.setupMultiplayer();
     }
 
-    update() {
+    update(time, delta) {
         if (!this.player || this.isChatOpen) return;
 
         const speed = 160;
@@ -358,6 +358,11 @@ class ExteriorScene extends BaseScene {
 
         if ((vx !== 0 || vy !== 0) && window.multiplayer?.connected) {
             window.multiplayer.sendMove(this.player.x, this.player.y);
+        }
+
+        // ← NUEVO: Actualizar interpolación de otros jugadores cada frame
+        if (window.multiplayer) {
+            window.multiplayer.update(this, delta);
         }
 
         const distToDoor = Phaser.Math.Distance.Between(this.player.x, this.player.y, 400, 270);
@@ -502,7 +507,7 @@ class CasaScene extends BaseScene {
         });
     }
 
-    update() {
+    update(time, delta) {
         if (!this.player || this.isChatOpen) return;
 
         const speed = 160;
@@ -518,6 +523,11 @@ class CasaScene extends BaseScene {
 
         if ((vx !== 0 || vy !== 0) && window.multiplayer?.connected) {
             window.multiplayer.sendMove(this.player.x, this.player.y);
+        }
+
+        // ← NUEVO: Actualizar interpolación de otros jugadores cada frame
+        if (window.multiplayer) {
+            window.multiplayer.update(this, delta);
         }
 
         const distToSecret = Phaser.Math.Distance.Between(this.player.x, this.player.y, 100, 150);
@@ -710,7 +720,7 @@ class FuturisticScene extends BaseScene {
         });
     }
 
-    update() {
+    update(time, delta) {
         if (!this.player || this.isChatOpen) return;
 
         const speed = 160;
@@ -726,6 +736,11 @@ class FuturisticScene extends BaseScene {
 
         if ((vx !== 0 || vy !== 0) && window.multiplayer?.connected) {
             window.multiplayer.sendMove(this.player.x, this.player.y);
+        }
+
+        // ← NUEVO: Actualizar interpolación de otros jugadores cada frame
+        if (window.multiplayer) {
+            window.multiplayer.update(this, delta);
         }
 
         const distToMachine = Phaser.Math.Distance.Between(this.player.x, this.player.y, 400, 210);
@@ -1175,7 +1190,7 @@ class EpochScene extends BaseScene {
         this.tweens.add({ targets: core, scale: [1, 1.2, 1], alpha: [0.7, 1, 0.7], duration: 1000, repeat: -1 });
     }
 
-    update() {
+    update(time, delta) {
         if (!this.player || this.isChatOpen) return;
 
         const speed = 160;
@@ -1191,6 +1206,11 @@ class EpochScene extends BaseScene {
 
         if ((vx !== 0 || vy !== 0) && window.multiplayer?.connected) {
             window.multiplayer.sendMove(this.player.x, this.player.y);
+        }
+
+        // ← NUEVO: Actualizar interpolación de otros jugadores cada frame
+        if (window.multiplayer) {
+            window.multiplayer.update(this, delta);
         }
 
         const distToMachine = Phaser.Math.Distance.Between(this.player.x, this.player.y, 700, 380);

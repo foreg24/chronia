@@ -274,19 +274,32 @@ wss.on('connection', (ws) => {
 
         case 'move': {
           if (!currentRoom) return;
-          const p = getRoom(currentRoom).players.get(clientId);
+          const room = getRoom(currentRoom);
+          const p = room.players.get(clientId);
           if (p) {
-            p.x = msg.x;
-            p.y = msg.y;
-            p.timestamp = Date.now();
-            // Broadcast a TODOS en la sala (el cliente filtrará por escena)
-            broadcast(currentRoom, {
-              type: 'playerMoved',
-              id: clientId,
-              x: msg.x,
-              y: msg.y,
-              scene: p.scene
-            }, clientId);
+            const now = Date.now();
+            // Server-side throttling: solo retransmitir si pasó 80ms o hay cambio significativo
+            const timeSinceLast = now - (p.lastMoveBroadcast || 0);
+            const dx = Math.abs(msg.x - (p.lastBroadcastX || p.x));
+            const dy = Math.abs(msg.y - (p.lastBroadcastY || p.y));
+
+            if (timeSinceLast >= 80 && (dx > 2 || dy > 2)) {
+              p.x = msg.x;
+              p.y = msg.y;
+              p.timestamp = now;
+              p.lastMoveBroadcast = now;
+              p.lastBroadcastX = msg.x;
+              p.lastBroadcastY = msg.y;
+
+              // Broadcast a TODOS en la sala (el cliente filtrará por escena)
+              broadcast(currentRoom, {
+                type: 'playerMoved',
+                id: clientId,
+                x: msg.x,
+                y: msg.y,
+                scene: p.scene
+              }, clientId);
+            }
           }
           break;
         }
