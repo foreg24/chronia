@@ -6,11 +6,13 @@
   <title>ChronIA</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="multiplayer.css">
+  <link rel="stylesheet" href="desktop.css">
   <!-- Phaser para el juego -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
   <!-- Tu juego Phaser -->
   <script src="phaser.js"></script>
   <script src="multiplayer.js"></script>
+  <script src="desktop.js"></script>
   <script src="scripts.js" defer></script>
 <body>
 
@@ -33,7 +35,7 @@
 <nav id="main-nav">
   <!-- Pastilla izquierda: brand -->
   <a class="nav-brand-pill" href="#" onclick="nav('home');return false;">
-    <div class="nav-brand-icon" id="nav-icon">⏱</div>
+    <div class="nav-brand-icon" id="nav-icon">⏱️</div>
     <div class="nav-brand-text">
       <span class="nav-brand-name">Introducción a la</span>
       <span class="nav-era" id="nav-era">Ing. de Software - SIGLO XXI</span>
@@ -45,6 +47,7 @@
     <ul class="nav-links" id="nav-links">
       <li><a href="#" onclick="nav('home');return false;"       data-s="home">🏠 Inicio</a></li>
       <li><a href="#" onclick="nav('explorar');return false;"   data-s="explorar">🗺 Explorar</a></li>
+      <li><a href="#" onclick="nav('sigloxxi');return false;"   data-s="sigloxxi">🌐 Siglo XXI</a></li>
       <li><a href="#" onclick="nav('ia');return false;"         data-s="ia">🤖 IA</a></li>
       <li><a href="#" onclick="nav('foro');return false;"       data-s="foro">💬 Foro</a></li>
       <li><a href="#" onclick="nav('play');return false;"       data-s="play">🎮 Play</a></li>
@@ -106,6 +109,56 @@
     <div class="sidebar">
       <div class="sidebar-hdr">⏳ ÉPOCAS</div>
       <div class="sidebar-scroll" id="sidebar-scroll"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SIGLO XXI — ESCRITORIO PC -->
+<section id="sigloxxi" class="section">
+  <div class="desktop-wrap">
+    <div class="desktop-hdr">
+      <h2>🌐 <span style="color:var(--accent)">SIGLO XXI</span></h2>
+      <p>Explora el conocimiento de la era digital</p>
+    </div>
+
+    <!-- Contenedor del escritorio PC -->
+    <div class="desktop-container" id="desktop-container">
+      <!-- Barra de tareas -->
+      <div class="desktop-taskbar">
+        <div class="taskbar-start" onclick="toggleStartMenu()">🪟 Inicio</div>
+        <div class="taskbar-apps" id="taskbar-apps"></div>
+        <div class="taskbar-clock" id="taskbar-clock">00:00</div>
+      </div>
+
+      <!-- Área de trabajo (fondo de pantalla) -->
+      <div class="desktop-workspace" id="desktop-workspace">
+        <!-- Iconos del escritorio -->
+        <div class="desktop-icons" id="desktop-icons">
+          <!-- Se generan dinámicamente desde JS -->
+        </div>
+
+        <!-- Ventanas abiertas -->
+        <div class="desktop-windows" id="desktop-windows"></div>
+      </div>
+
+      <!-- Menú Inicio -->
+      <div class="start-menu" id="start-menu" style="display:none;">
+        <div class="start-header">🌐 ChronOS — Siglo XXI</div>
+        <div class="start-apps">
+          <div class="start-app" onclick="openApp('navegador')">
+            <span class="start-app-icon">🌐</span>
+            <span>Navegador Web</span>
+          </div>
+          <div class="start-app" onclick="openApp('documentos')">
+            <span class="start-app-icon">📁</span>
+            <span>Documentos</span>
+          </div>
+          <div class="start-app" onclick="openApp('terminal')">
+            <span class="start-app-icon">💻</span>
+            <span>Terminal</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -267,7 +320,7 @@
 
 <!-- ============================================================ FOOTER -->
 <footer>
-  <div class="footer-logo">⏱ CHRÓNIA — VIAJE EN EL TIEMPO</div>
+  <div class="footer-logo">⏱️ CHRÓNIA — VIAJE EN EL TIEMPO</div>
   <p class="footer-txt">© Jesús Forero, Carlos Rincón y Emily Arrieta</p>
   <p class="footer-txt">Introducción a la Ingeniería de Software</p>
 </footer>

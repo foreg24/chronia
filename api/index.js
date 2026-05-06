@@ -125,11 +125,11 @@ app.get('*', (req, res) => {
 });
 
 // ============================================================
-// WEBSOCKET MULTIJUGADOR — v2.0
+// WEBSOCKET MULTIJUGADOR — v2.1
 // ============================================================
-// LÓGICA: Los jugadores en la MISMA SALA se ven entre sí.
-// La escena se sincroniza para renderizar correctamente.
-// Solo playerJoined/playerLeft al conectar/desconectar.
+// FIXES:
+// - Guardar y enviar 'gender' en todos los mensajes de jugador
+// - Enviar gender en init, playerJoined, playerSceneChange
 // ============================================================
 
 const wss = new WebSocket.Server({ server });
@@ -190,6 +190,7 @@ wss.on('connection', (ws) => {
   const clientId = genId();
   let currentRoom = null;
   let playerName = 'Viajero';
+  let playerGender = 'm';  // ← FIX: guardar género localmente
   let currentScene = 'ExteriorScene';
 
   ws.isAlive = true;
@@ -210,6 +211,7 @@ wss.on('connection', (ws) => {
 
         case 'join': {
           playerName = msg.name || 'Viajero';
+          playerGender = msg.gender || 'm';  // ← FIX: leer género del mensaje
           currentRoom = msg.room || 'exterior';
           currentScene = msg.scene || 'ExteriorScene';
           const room = getRoom(currentRoom);
@@ -219,9 +221,11 @@ wss.on('connection', (ws) => {
             room.players.delete(clientId);
           }
 
+          // ← FIX: Guardar gender en el objeto del jugador
           room.players.set(clientId, {
             id: clientId,
             name: playerName,
+            gender: playerGender,  // ← FIX
             x: msg.x || 400,
             y: msg.y || 400,
             room: currentRoom,
@@ -230,11 +234,19 @@ wss.on('connection', (ws) => {
             timestamp: Date.now()
           });
 
-          // Enviar TODOS los jugadores de la sala (incluye su escena para filtrar en cliente)
+          // Enviar TODOS los jugadores de la sala (incluye gender)
           const allPlayers = [];
           room.players.forEach((p, id) => {
             if (id !== clientId) {
-              allPlayers.push({ id: p.id, name: p.name, x: p.x, y: p.y, scene: p.scene });
+              // ← FIX: incluir gender en la lista de jugadores
+              allPlayers.push({ 
+                id: p.id, 
+                name: p.name, 
+                gender: p.gender || 'm',  // ← FIX
+                x: p.x, 
+                y: p.y, 
+                scene: p.scene 
+              });
             }
           });
 
@@ -245,17 +257,18 @@ wss.on('connection', (ws) => {
             messages: room.messages.slice(-20)
           }));
 
-          // Notificar a TODOS en la sala que llegó un nuevo jugador
+          // Notificar a TODOS en la sala que llegó un nuevo jugador (con gender)
           broadcast(currentRoom, {
             type: 'playerJoined',
             id: clientId,
             name: playerName,
+            gender: playerGender,  // ← FIX
             x: msg.x || 400,
             y: msg.y || 400,
             scene: currentScene
           }, clientId);
 
-          console.log(`👤 ${playerName} → ${currentRoom} / ${currentScene}`);
+          console.log(`👤 ${playerName} (${playerGender === 'f' ? '♀' : '♂'}) → ${currentRoom} / ${currentScene}`);
           break;
         }
 
@@ -291,22 +304,30 @@ wss.on('connection', (ws) => {
           player.timestamp = Date.now();
           currentScene = msg.scene || 'ExteriorScene';
 
-          // Notificar a TODOS en la sala del cambio de escena
+          // Notificar a TODOS en la sala del cambio de escena (con gender)
           broadcast(currentRoom, {
             type: 'playerSceneChange',
             id: clientId,
             name: playerName,
+            gender: playerGender,  // ← FIX
             scene: currentScene,
             x: msg.x || 400,
             y: msg.y || 400
           }, clientId);
 
           // Responder al propio cliente con los jugadores ya presentes en la nueva escena
-          // (para que vea a quienes ya estaban ahí)
           const playersInNewScene = [];
           room.players.forEach((p, id) => {
             if (id !== clientId && p.scene === currentScene) {
-              playersInNewScene.push({ id: p.id, name: p.name, x: p.x, y: p.y, scene: p.scene });
+              // ← FIX: incluir gender
+              playersInNewScene.push({ 
+                id: p.id, 
+                name: p.name, 
+                gender: p.gender || 'm',  // ← FIX
+                x: p.x, 
+                y: p.y, 
+                scene: p.scene 
+              });
             }
           });
           if (ws.readyState === WebSocket.OPEN) {
@@ -319,9 +340,6 @@ wss.on('connection', (ws) => {
           console.log(`🔄 ${playerName} cambió escena: ${oldScene} → ${currentScene} (${playersInNewScene.length} jugadores presentes)`);
           break;
         }
-
-          // Notificar a TODOS en la sala del cambio de escena
-          // El cliente decidirá si mostrar/ocultar según su escena actual
 
         case 'chat': {
           if (!currentRoom) return;

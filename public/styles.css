@@ -455,3 +455,148 @@ footer{background:var(--bg2);border-top:1px solid rgba(255,255,255,.07);padding:
   color: #000;
   box-shadow: 0 0 20px rgba(0,245,255,.5);
 }
+
+
+/* ============================================================
+   SIGLO XXI — Estilos adicionales responsive
+   ============================================================ */
+
+#sigloxxi.section {
+  padding-top: calc(var(--nav-h) + 1.5rem);
+}
+
+#sigloxxi .desktop-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Animación de cierre de ventana */
+@keyframes windowClose {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.9); }
+}
+
+/* Responsive del escritorio */
+@media (max-width: 900px) {
+  #sigloxxi .desktop-container {
+    aspect-ratio: 4 / 3;
+    min-height: 350px;
+  }
+
+  #sigloxxi .desktop-icons {
+    grid-template-columns: repeat(auto-fill, 75px);
+    grid-template-rows: repeat(auto-fill, 90px);
+    gap: 0.3rem;
+  }
+
+  #sigloxxi .desktop-icon {
+    width: 75px;
+    height: 90px;
+    padding: 0.4rem 0.2rem;
+  }
+
+  #sigloxxi .desktop-icon-img {
+    width: 36px;
+    height: 36px;
+  }
+
+  #sigloxxi .desktop-icon-label {
+    font-size: 0.48rem;
+  }
+
+  #sigloxxi .desktop-window {
+    min-width: 220px;
+    min-height: 140px;
+  }
+
+  #sigloxxi .folder-view {
+    grid-template-columns: repeat(auto-fill, 80px);
+    gap: 0.5rem;
+  }
+
+  #sigloxxi .folder-item {
+    padding: 0.5rem 0.3rem;
+  }
+
+  #sigloxxi .folder-item-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  #sigloxxi .document-view {
+    padding: 1rem;
+  }
+
+  #sigloxxi .document-view h1 {
+    font-size: 1.1rem;
+  }
+
+  #sigloxxi .document-view h2 {
+    font-size: 0.9rem;
+  }
+
+  #sigloxxi .document-view p,
+  #sigloxxi .document-view li {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 560px) {
+  #sigloxxi .desktop-container {
+    min-height: 300px;
+    border-radius: var(--r);
+  }
+
+  #sigloxxi .desktop-taskbar {
+    height: 34px;
+    padding: 0 0.4rem;
+  }
+
+  #sigloxxi .taskbar-start {
+    font-size: 0.28rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  #sigloxxi .taskbar-clock {
+    font-size: 0.48rem;
+  }
+
+  #sigloxxi .desktop-icons {
+    grid-template-columns: repeat(auto-fill, 65px);
+    grid-template-rows: repeat(auto-fill, 80px);
+  }
+
+  #sigloxxi .desktop-icon {
+    width: 65px;
+    height: 80px;
+  }
+
+  #sigloxxi .desktop-icon-img {
+    width: 32px;
+    height: 32px;
+  }
+
+  #sigloxxi .desktop-icon-label {
+    font-size: 0.42rem;
+  }
+
+  #sigloxxi .start-menu {
+    width: 200px;
+  }
+
+  #sigloxxi .window-header {
+    height: 30px;
+    padding: 0 0.5rem;
+  }
+
+  #sigloxxi .window-title {
+    font-size: 0.5rem;
+  }
+
+  #sigloxxi .window-btn {
+    width: 12px;
+    height: 12px;
+    font-size: 0.4rem;
+  }
+}

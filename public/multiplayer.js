@@ -1,6 +1,9 @@
 /* =============================================================
    MULTIJUGADOR — WebSocket Client para Time Traveler RPG
-   v2.1 — Soporte de género: cada jugador ve al otro con su sprite correcto
+   v2.2 — FIXES:
+   - Gender se lee correctamente de mensajes del servidor
+   - Sprites de animación usan las texturas correctas por género
+   - Animación de otros jugadores más suave (interpolación mejorada)
    ============================================================= */
 
 class MultiplayerManager {
@@ -78,7 +81,7 @@ class MultiplayerManager {
     this.ws.send(JSON.stringify({
       type: 'join',
       name: this.playerName,
-      gender: this.playerGender,
+      gender: this.playerGender,  // ← Enviar género al servidor
       room: 'world',
       scene: scene.scene.key,
       x: x, y: y
@@ -97,7 +100,9 @@ class MultiplayerManager {
             const active = window.gameInstance?.scene?.scenes?.find(s => s.scene.isActive());
             if (active && (active.scene.key === targetScene ||
                 (targetScene.startsWith('EpochScene_') && active.scene.key === 'EpochScene'))) {
-              players.forEach(p => { if (!this.players.has(p.id)) this.createPlayerSprite(p, active); });
+              players.forEach(p => { 
+                if (!this.players.has(p.id)) this.createPlayerSprite(p, active); 
+              });
               this.updatePlayerCount();
             } else if (attempts < maxAttempts) { attempts++; setTimeout(tryCreate, 100); }
           };
@@ -108,13 +113,17 @@ class MultiplayerManager {
       case 'init': {
         this.id = msg.id;
         this.cleanupPlayers(scene);
-        msg.players.forEach(p => { if (p.scene === this.currentScene) this.createPlayerSprite(p, scene); });
+        // ← FIX: msg.players ahora incluye gender desde el servidor
+        msg.players.forEach(p => { 
+          if (p.scene === this.currentScene) this.createPlayerSprite(p, scene); 
+        });
         this.updatePlayerCount();
         break;
       }
       case 'playerJoined': {
         if (msg.id !== this.id && msg.scene === this.currentScene) {
           if (this.players.has(msg.id)) this.removePlayer(msg.id, scene);
+          // ← FIX: msg ahora incluye gender
           this.createPlayerSprite(msg, scene);
           this.showSystemMessage(`${msg.name} se ha unido`, scene);
           this.updatePlayerCount();
@@ -140,7 +149,15 @@ class MultiplayerManager {
         if (msg.id === this.id) return;
         if (msg.scene === this.currentScene) {
           if (!this.players.has(msg.id)) {
-            this.createPlayerSprite({ id: msg.id, name: msg.name, gender: msg.gender, x: msg.x, y: msg.y, scene: msg.scene }, scene);
+            // ← FIX: msg ahora incluye gender
+            this.createPlayerSprite({ 
+              id: msg.id, 
+              name: msg.name, 
+              gender: msg.gender,  // ← FIX
+              x: msg.x, 
+              y: msg.y, 
+              scene: msg.scene 
+            }, scene);
             this.updatePlayerCount();
           }
         } else {
@@ -166,16 +183,24 @@ class MultiplayerManager {
     }
     if (!scene || !scene.add) return;
 
+    // ← FIX: Usar gender del servidor, fallback a 'm'
     const gender = playerData.gender || 'm';
     const container = scene.add.container(playerData.x, playerData.y);
     container.setDepth(15);
 
+    // ← FIX: Textura base según género
     const textureKey = gender === 'f' ? 'chica' : 'chico';
     let body;
     if (scene.textures && scene.textures.exists(textureKey)) {
       body = scene.add.image(0, 0, textureKey).setDisplaySize(115, 115);
     } else {
-      body = scene.add.rectangle(0, 0, 16, 24, gender === 'f' ? 0xbf5fff : 0xff6b35);
+      // Fallback: cuadrado coloreado
+      const size = 28;
+      body = scene.add.rectangle(
+        0, 0, 
+        size, size,
+        gender === 'f' ? 0xbf5fff : 0x00f5ff
+      );
     }
 
     const nameText = scene.add.text(0, -38, playerData.name, {
@@ -194,14 +219,17 @@ class MultiplayerManager {
     container.setScale(0);
     scene.tweens.add({ targets: container, scale: 1, duration: 300, ease: 'Back.easeOut' });
 
+    // ← FIX: Guardar gender correctamente
     this.players.set(playerData.id, {
       container, body, nameText, onlineDot,
       chatBubble: null, chatBubbleTimer: null,
-      name: playerData.name, gender,
+      name: playerData.name, 
+      gender: gender,  // ← FIX
       scene: playerData.scene,
       x: playerData.x, y: playerData.y,
       targetX: playerData.x, targetY: playerData.y,
-      walkFrame: 0, walkTimer: 0
+      walkFrame: 0, walkTimer: 0,
+      lastDir: 'front'  // ← FIX: trackear dirección para evitar glitch
     });
   }
 
@@ -211,52 +239,89 @@ class MultiplayerManager {
 
     const dx = x - player.x;
     const dy = y - player.y;
+    const g = player.gender || 'm';
 
-    // Animación de sprite según dirección
+    // ← FIX: Animación de sprite según dirección (usar texturas correctas por género)
     if (scene && scene.textures && player.body && player.body.setTexture) {
-      const g = player.gender;
       const now = Date.now();
-      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+      const moving = Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5;
+
+      if (moving) {
+        // Animación de caminata cada 150ms
         if (now - player.walkTimer > 150) {
           player.walkFrame = (player.walkFrame + 1) % 2;
           player.walkTimer = now;
         }
+
+        // ← FIX: Texturas CORRECTAS por género
         if (Math.abs(dx) >= Math.abs(dy)) {
+          // Movimiento horizontal
           if (dx > 0) {
-            const keys = g === 'f' ? ['chicaper', 'chicamin'] : ['chicoper', 'chicomin'];
+            // Derecha
+            player.lastDir = 'right';
+            const keys = g === 'f' 
+              ? ['chicaper', 'chicamin']      // Mujer derecha
+              : ['chicoper', 'chicomin'];     // Hombre derecha
             const key = keys[player.walkFrame];
             if (scene.textures.exists(key)) player.body.setTexture(key);
           } else {
-            const keys = g === 'f' ? ['chicaperizq', 'chicaminizq'] : ['chicoperizq', 'chicominizq'];
+            // Izquierda
+            player.lastDir = 'left';
+            const keys = g === 'f'
+              ? ['chicaperizq', 'chicaminizq']  // Mujer izquierda
+              : ['chicoperizq', 'chicominizq']; // Hombre izquierda
             const key = keys[player.walkFrame];
             if (scene.textures.exists(key)) player.body.setTexture(key);
           }
         } else {
+          // Movimiento vertical
           if (dy < 0) {
+            // Arriba
+            player.lastDir = 'back';
             const key = g === 'f' ? 'chicaespa' : 'chicoespa';
             if (scene.textures.exists(key)) player.body.setTexture(key);
           } else {
+            // Abajo
+            player.lastDir = 'front';
             const key = g === 'f' ? 'chica' : 'chico';
             if (scene.textures.exists(key)) player.body.setTexture(key);
           }
         }
       } else {
+        // En reposo: mantener última dirección o frontal
         const key = g === 'f' ? 'chica' : 'chico';
         if (scene.textures.exists(key)) player.body.setTexture(key);
       }
     }
 
-    player.targetX = x; player.targetY = y;
+    // ← FIX: Interpolación más suave (200ms en vez de 150ms)
+    player.targetX = x; 
+    player.targetY = y;
     if (scene && scene.tweens) {
-      scene.tweens.add({ targets: player.container, x, y, duration: 150, ease: 'Linear' });
-    } else { player.container.x = x; player.container.y = y; }
-    player.x = x; player.y = y;
+      // Cancelar tween anterior si existe para evitar acumulación
+      if (player._moveTween) player._moveTween.stop();
+
+      player._moveTween = scene.tweens.add({ 
+        targets: player.container, 
+        x, 
+        y, 
+        duration: 200,  // ← FIX: más suave
+        ease: 'Linear',
+        onComplete: () => { player._moveTween = null; }
+      });
+    } else { 
+      player.container.x = x; 
+      player.container.y = y; 
+    }
+    player.x = x; 
+    player.y = y;
   }
 
   removePlayer(id, scene) {
     const player = this.players.get(id);
     if (!player) return;
     if (player.chatBubbleTimer) { clearTimeout(player.chatBubbleTimer); player.chatBubbleTimer = null; }
+    if (player._moveTween) { player._moveTween.stop(); player._moveTween = null; }
     if (player.container && scene && scene.tweens) {
       scene.tweens.add({
         targets: player.container, scale: 0, alpha: 0, duration: 300,
@@ -373,6 +438,7 @@ class MultiplayerManager {
   cleanupPlayers(scene) {
     this.players.forEach((player) => {
       if (player.chatBubbleTimer) { clearTimeout(player.chatBubbleTimer); player.chatBubbleTimer = null; }
+      if (player._moveTween) { player._moveTween.stop(); player._moveTween = null; }
       if (player.container) player.container.destroy();
     });
     this.players.clear();

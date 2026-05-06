@@ -1967,4 +1967,8 @@ function afterLoad() {
   initMap();
   initMobileControls();
   bindSfx();
+  // ← NUEVO: Precargar escritorio (se activa al navegar a sigloxxi)
+  if (typeof initDesktop === 'function') {
+    // El escritorio se inicializa lazy al entrar a la sección
+  }
 }
