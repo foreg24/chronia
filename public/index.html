@@ -126,9 +126,9 @@
 
     <!-- Aviso móvil — solo visible en pantallas pequeñas -->
     <div class="desktop-mobile-notice" id="desktop-mobile-notice">
-      <span class="desktop-mobile-notice__icon">ℹ</span>
+      <span class="desktop-mobile-notice__icon">i</span>
       <p class="desktop-mobile-notice__text">
-        Esta experiencia no está disponible en dispositivos móviles. Para explorar el Siglo XXI, accede desde un computador de escritorio.
+        Esta experiencia no está disponible en dispositivos móviles. Para explorar los mundos del Siglo XXI, accede desde un computador de escritorio.
       </p>
     </div>
 
@@ -344,7 +344,7 @@
     <div class="play-instructions">
       <div class="inst-card">
         <h4>🎯 Objetivo</h4>
-        <p>Recorre las diferentes épocas importantes para la historia de la ingeniería de software</p>
+        <p>Recorre las diferentes épocas de la historia de la computación</p>
       </div>
       <div class="inst-card">
         <h4>🕹️ Controles</h4>
@@ -408,7 +408,7 @@
 
 <script>
 // ============================================================
-// RESTAURAR ASPECT-RATIO EN MÓVIL AL INICIAR EL JUEGO
+// RESTAURAR ASPECT-RATIO EN MÓVIL AL INICIAR/SALIR DEL JUEGO
 // ============================================================
 (function() {
   const ph = document.getElementById('game-placeholder');
@@ -417,7 +417,8 @@
   const obs = new MutationObserver(function() {
     if (ph.style.display === 'none') {
       gc.classList.add('game-active');
-      obs.disconnect();
+    } else {
+      gc.classList.remove('game-active');
     }
   });
   obs.observe(ph, { attributes: true, attributeFilter: ['style'] });
