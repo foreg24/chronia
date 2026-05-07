@@ -1,12 +1,5 @@
 /* =============================================================
-   MULTIJUGADOR v3.0 — WebSocket Client con interpolación suave
-   =============================================================
-   CAMBIOS CLAVE:
-   - Throttling: envía move máximo 10 veces/segundo
-   - Interpolación por frame (no tweens que compiten)
-   - Dead reckoning + lerp suave
-   - Gender correcto en todos los mensajes
-   - Animación de sprites por dirección sin glitch
+   MULTIJUGADOR v3.1 — Ocultar jugador local en EpochSelectorScene
    ============================================================= */
 
 class MultiplayerManager {
@@ -26,15 +19,12 @@ class MultiplayerManager {
     this.onChatMessage = null;
     this.onPlayerCountChange = null;
 
-    // THROTTLING: Control de envío de movimiento
     this._lastMoveSend = 0;
-    this._moveThrottleMs = 80; // ~12 updates/segundo (suficiente para fluido)
+    this._moveThrottleMs = 80;
     this._lastSentX = 0;
     this._lastSentY = 0;
-    this._minMoveDelta = 3; // Mínimo px de cambio para enviar
-
-    // Buffer de posición para interpolación
-    this._positionBuffer = new Map(); // playerId -> {x, y, timestamp}
+    this._minMoveDelta = 3;
+    this._positionBuffer = new Map();
   }
 
   connect(scene) {
@@ -103,9 +93,6 @@ class MultiplayerManager {
     }));
   }
 
-  // ============================================================
-  // THROTTLED MOVE: Solo envía si pasó suficiente tiempo o distancia
-  // ============================================================
   sendMove(x, y) {
     if (!this.connected || !this.ws) return;
 
@@ -114,9 +101,6 @@ class MultiplayerManager {
     const dy = Math.abs(y - this._lastSentY);
     const timeSinceLast = now - this._lastMoveSend;
 
-    // Enviar solo si:
-    // 1. Pasó el tiempo mínimo (throttling) Y hay movimiento significativo
-    // 2. O cambió de dirección bruscamente
     if (timeSinceLast >= this._moveThrottleMs && (dx > this._minMoveDelta || dy > this._minMoveDelta)) {
       this._lastMoveSend = now;
       this._lastSentX = x;
@@ -170,7 +154,6 @@ class MultiplayerManager {
       case 'playerMoved': {
         const player = this.players.get(msg.id);
         if (player) {
-          // Guardar posición objetivo en buffer (NO mover inmediatamente)
           player.targetX = msg.x;
           player.targetY = msg.y;
           player.hasTarget = true;
@@ -217,9 +200,14 @@ class MultiplayerManager {
   }
 
   // ============================================================
-  // CREATE PLAYER: Con sistema de interpolación por frame
+  // CREATE PLAYER: NO crear sprite si es el jugador local
+  // en EpochSelectorScene (escena de selección de épocas)
   // ============================================================
   createPlayerSprite(playerData, scene) {
+    // NO MOSTRAR jugador local en EpochSelectorScene
+    // P1 ve a P2, P2 ve a P1, nadie se ve a sí mismo en el selector
+    if (scene.scene.key === 'EpochSelectorScene') return;
+
     if (this.players.has(playerData.id)) return;
     if (!scene || !scene.add) return;
 
@@ -252,22 +240,18 @@ class MultiplayerManager {
     container.setScale(0);
     scene.tweens.add({ targets: container, scale: 1, duration: 300, ease: 'Back.easeOut' });
 
-    // Sistema de interpolación suave
     this.players.set(playerData.id, {
       container, body, nameText, onlineDot,
       chatBubble: null, chatBubbleTimer: null,
       name: playerData.name, 
       gender: gender,
       scene: playerData.scene,
-      // Posición actual (visual)
       x: playerData.x, 
       y: playerData.y,
-      // Posición objetivo (del servidor)
       targetX: playerData.x,
       targetY: playerData.y,
       hasTarget: false,
       lastUpdate: Date.now(),
-      // Animación
       walkFrame: 0, 
       walkTimer: 0,
       lastDir: 'front',
@@ -275,10 +259,6 @@ class MultiplayerManager {
     });
   }
 
-  // ============================================================
-  // UPDATE: Llamar desde el update() de Phaser cada frame
-  // Interpola suavemente hacia la posición objetivo
-  // ============================================================
   update(scene, delta) {
     const now = Date.now();
 
@@ -286,12 +266,10 @@ class MultiplayerManager {
       if (!player.container || !player.container.active) return;
 
       if (player.hasTarget) {
-        // Calcular distancia al objetivo
         const dx = player.targetX - player.x;
         const dy = player.targetY - player.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Si está muy cerca, snap directo
         if (dist < 1) {
           player.x = player.targetX;
           player.y = player.targetY;
@@ -303,9 +281,7 @@ class MultiplayerManager {
           return;
         }
 
-        // INTERPOLACIÓN SUAVE: lerp factor basado en distancia
-        // Más lejos = más rápido, más cerca = más suave
-        const lerpFactor = Math.min(0.15, dist * 0.005); // Ajustable
+        const lerpFactor = Math.min(0.15, dist * 0.005);
         const moveX = dx * lerpFactor;
         const moveY = dy * lerpFactor;
 
@@ -314,27 +290,21 @@ class MultiplayerManager {
         player.container.x = player.x;
         player.container.y = player.y;
 
-        // Actualizar animación de sprite
         player.isMoving = true;
         this.updateSpriteAnimation(player, dx, dy, scene);
 
-        // Si no recibimos update en 500ms, considerar detenido
         if (now - player.lastUpdate > 500) {
           player.hasTarget = false;
           player.isMoving = false;
           this.updateSpriteAnimation(player, 0, 0, scene);
         }
       } else if (player.isMoving) {
-        // Se quedó sin target pero seguía marcado como moviendo
         player.isMoving = false;
         this.updateSpriteAnimation(player, 0, 0, scene);
       }
     });
   }
 
-  // ============================================================
-  // ANIMACIÓN DE SPRITE: Sin tweens, solo cambio de textura
-  // ============================================================
   updateSpriteAnimation(player, dx, dy, scene) {
     if (!player.body || !player.body.setTexture) return;
     if (!scene || !scene.textures) return;
@@ -344,14 +314,12 @@ class MultiplayerManager {
     const moving = Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5;
 
     if (moving) {
-      // Animación de caminata cada 180ms
       if (now - player.walkTimer > 180) {
         player.walkFrame = (player.walkFrame + 1) % 2;
         player.walkTimer = now;
       }
 
       if (Math.abs(dx) >= Math.abs(dy)) {
-        // Movimiento horizontal
         if (dx > 0) {
           player.lastDir = 'right';
           const keys = g === 'f' 
@@ -368,7 +336,6 @@ class MultiplayerManager {
           if (scene.textures.exists(key)) player.body.setTexture(key);
         }
       } else {
-        // Movimiento vertical
         if (dy < 0) {
           player.lastDir = 'back';
           const key = g === 'f' ? 'chicaespa' : 'chicoespa';
@@ -380,7 +347,6 @@ class MultiplayerManager {
         }
       }
     } else {
-      // En reposo: sprite frontal
       const key = g === 'f' ? 'chica' : 'chico';
       if (scene.textures.exists(key)) player.body.setTexture(key);
     }

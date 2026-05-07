@@ -103,7 +103,10 @@
         </div>
         <p class="ep-summary" id="ep-summary"></p>
         <div class="ep-tags" id="ep-tags"></div>
-        <button class="ep-btn" onclick="askAboutEpoch()">🤖 Preguntar a la IA →</button>
+        <div class="ep-actions" id="ep-actions">
+          <button class="ep-btn" onclick="askAboutEpoch()">🤖 Preguntar a la IA →</button>
+          <button class="ep-btn ep-btn-discover" id="ep-btn-discover" onclick="discoverMore()" style="display:none;">🌐 Descubrir más →</button>
+        </div>
       </div>
     </div>
     <div class="sidebar">
@@ -119,6 +122,14 @@
     <div class="desktop-hdr">
       <h2>🌐 <span style="color:var(--accent)">SIGLO XXI</span></h2>
       <p>Explora el conocimiento de la era digital</p>
+    </div>
+
+    <!-- Aviso móvil — solo visible en pantallas pequeñas -->
+    <div class="desktop-mobile-notice" id="desktop-mobile-notice">
+      <span class="desktop-mobile-notice__icon">ℹ</span>
+      <p class="desktop-mobile-notice__text">
+        Esta experiencia no está disponible en dispositivos móviles. Para explorar el Siglo XXI, accede desde un computador de escritorio.
+      </p>
     </div>
 
     <!-- Contenedor del escritorio PC -->
@@ -333,7 +344,7 @@
     <div class="play-instructions">
       <div class="inst-card">
         <h4>🎯 Objetivo</h4>
-        <p>Recorre las diferentes épocas de la historia de la computación</p>
+        <p>Recorre las diferentes épocas importantes para la historia de la ingeniería de software</p>
       </div>
       <div class="inst-card">
         <h4>🕹️ Controles</h4>
@@ -396,6 +407,22 @@
 
 
 <script>
+// ============================================================
+// RESTAURAR ASPECT-RATIO EN MÓVIL AL INICIAR EL JUEGO
+// ============================================================
+(function() {
+  const ph = document.getElementById('game-placeholder');
+  const gc = document.getElementById('game-container');
+  if (!ph || !gc) return;
+  const obs = new MutationObserver(function() {
+    if (ph.style.display === 'none') {
+      gc.classList.add('game-active');
+      obs.disconnect();
+    }
+  });
+  obs.observe(ph, { attributes: true, attributeFilter: ['style'] });
+})();
+
 // ============================================================
 // NOMBRE ANTES DE INICIAR JUEGO
 // ============================================================

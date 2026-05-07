@@ -1,25 +1,63 @@
 /* =============================================================
    TIME TRAVELER RPG — Phaser 3 Game
-   v2.0 — Sprites por género, imágenes de fondo, colisiones,
-           puertas transparentes, efectos pixel
+   v3.0 — Ocultar jugador local en selector, collision blocks system,
+           escenas de épocas limpias, fondos animados por secuencia
    ============================================================= */
 
 const EPOCHS_DATA = [
-    { id: 'mesopotamia', name: 'Mesopotamia', period: '~3500-500 a.C.', color: '#d4a574', icon: '🏺', desc: 'Ábacos de arcilla y tablillas cuneiformes' },
-    { id: 'egipto', name: 'Egipto', period: '~3000-30 a.C.', color: '#e8c85a', icon: '🔺', desc: 'Geometría y el Papiro de Ahmes' },
-    { id: 'grecia', name: 'Grecia', period: '~800-31 a.C.', color: '#f0e6d2', icon: '🏛️', desc: 'El Mecanismo de Anticitera' },
-    { id: 'edadmedia', name: 'Edad Media', period: '476-1400 d.C.', color: '#9c7c4a', icon: '🏰', desc: 'Álgebra árabe y relojes mecánicos' },
-    { id: 'era1300', name: '1300-1700', period: '1300-1700', color: '#c08840', icon: '⚙️', desc: 'Pascalina y cálculo diferencial' },
-    { id: 'era1700', name: '1700-1900', period: '1700-1900', color: '#8fa8c0', icon: '🏭', desc: 'Máquina analítica de Babbage' },
-    { id: 'sigloxx', name: 'Siglo XX', period: '1900-2000', color: '#00d4aa', icon: '💻', desc: 'Turing, von Neumann y computadoras' },
-    { id: 'sigloxxi', name: 'Siglo XXI', period: '2000-hoy', color: '#00f5ff', icon: '🌐', desc: 'IA, nube y computación cuántica' }
+    { id: 'mesopotamia', name: 'Mesopotamia', period: '~3500-500 a.C.', color: '#d4a574', icon: '🏺', desc: 'Ábacos de arcilla y tablillas cuneiformes', animatedBg: false },
+    { id: 'egipto', name: 'Egipto', period: '~3000-30 a.C.', color: '#e8c85a', icon: '🔺', desc: 'Geometría y el Papiro de Ahmes', animatedBg: false },
+    { id: 'grecia', name: 'Grecia', period: '~800-31 a.C.', color: '#f0e6d2', icon: '🏛️', desc: 'El Mecanismo de Anticitera', animatedBg: false },
+    { id: 'edadmedia', name: 'Edad Media', period: '476-1400 d.C.', color: '#9c7c4a', icon: '🏰', desc: 'Álgebra árabe y relojes mecánicos', animatedBg: false },
+    { id: 'era1300', name: '1300-1700', period: '1300-1700', color: '#c08840', icon: '⚙️', desc: 'Pascalina y cálculo diferencial', animatedBg: true, bgPrefix: 'era1300_bg' },
+    { id: 'era1700', name: '1700-1900', period: '1700-1900', color: '#8fa8c0', icon: '🏭', desc: 'Máquina analítica de Babbage', animatedBg: true, bgPrefix: 'era1700_bg' },
+    { id: 'sigloxx', name: 'Siglo XX', period: '1900-2000', color: '#00d4aa', icon: '💻', desc: 'Turing, von Neumann y computadoras', animatedBg: true, bgPrefix: 'sigloxx_bg' },
+    { id: 'sigloxxi', name: 'Siglo XXI', period: '2000-hoy', color: '#00f5ff', icon: '🌐', desc: 'IA, nube y computación cuántica', animatedBg: true, bgPrefix: 'sigloxxi_bg' }
 ];
 
 // ============================================================
-// CLASE BASE
+// CLASE BASE — Con sistema de bloques de colisión
 // ============================================================
 class BaseScene extends Phaser.Scene {
     constructor(key) { super({ key }); }
+
+    // ============================================================
+    // SISTEMA DE BLOQUES DE COLISIÓN
+    // ============================================================
+    // Método para crear bloques de colisión invisibles
+    // Úsalo en create() de cada escena: this.createCollisionBlock(x, y, w, h);
+    // Los bloques se almacenan en this._collisionBlocks para gestión
+    createCollisionBlock(x, y, w, h) {
+        const block = this.add.rectangle(x, y, w, h, 0xff0000, 0); // alpha=0: invisible
+        block.setDepth(2);
+        this.physics.add.existing(block, true); // static body
+
+        if (this.player) {
+            this.physics.add.collider(this.player, block);
+        }
+
+        if (!this._collisionBlocks) this._collisionBlocks = [];
+        this._collisionBlocks.push(block);
+        return block;
+    }
+
+    // Método para aplicar colisiones del jugador a todos los bloques existentes
+    // (útil si creas bloques antes del jugador)
+    applyCollisionToPlayer() {
+        if (!this.player || !this._collisionBlocks) return;
+        this._collisionBlocks.forEach(block => {
+            this.physics.add.collider(this.player, block);
+        });
+    }
+
+    // Método para limpiar todos los bloques de colisión
+    clearCollisionBlocks() {
+        if (!this._collisionBlocks) return;
+        this._collisionBlocks.forEach(block => {
+            if (block && block.active) block.destroy();
+        });
+        this._collisionBlocks = [];
+    }
 
     // Preload de todas las imágenes de personajes
     preloadCharacters() {
@@ -46,36 +84,37 @@ class BaseScene extends Phaser.Scene {
     }
 
     createPlayer(x, y) {
-    const gender = this.getGender();
-    const textureKey = gender === 'f' ? 'chica' : 'chico';
+        const gender = this.getGender();
+        const textureKey = gender === 'f' ? 'chica' : 'chico';
 
-    let playerImg;
-    if (this.textures.exists(textureKey)) {
-        playerImg = this.add.image(x, y, textureKey);
-        playerImg.setDisplaySize(115, 115);
-    } else {
-        // Fallback: CUADRADO coloreado (más grande)
-        const size = 28;                    // ← tamaño del cuadrado (antes era 16×24)
-        playerImg = this.add.rectangle(
-            x, y, 
-            size, size,                     // ← ancho y alto iguales = cuadrado
-            gender === 'f' ? 0xbf5fff : 0x00f5ff
-        );
+        let playerImg;
+        if (this.textures.exists(textureKey)) {
+            playerImg = this.add.image(x, y, textureKey);
+            playerImg.setDisplaySize(115, 115);
+        } else {
+            const size = 28;
+            playerImg = this.add.rectangle(
+                x, y, 
+                size, size,
+                gender === 'f' ? 0xbf5fff : 0x00f5ff
+            );
+        }
+
+        this.physics.add.existing(playerImg);
+        playerImg.body.setCollideWorldBounds(true);
+        playerImg.body.setSize(20, 30);
+        playerImg.setDepth(10);
+
+        playerImg._gender = gender;
+        playerImg._walkFrame = 0;
+        playerImg._walkTimer = 0;
+        playerImg._lastDir = 'front';
+
+        // Aplicar colisiones con bloques existentes
+        this.applyCollisionToPlayer();
+
+        return playerImg;
     }
-
-    this.physics.add.existing(playerImg);
-    playerImg.body.setCollideWorldBounds(true);
-    playerImg.body.setSize(20, 30);         // ← ajusta también el hitbox si quieres
-    playerImg.setDepth(10);
-
-    // Estado de animación
-    playerImg._gender = gender;
-    playerImg._walkFrame = 0;
-    playerImg._walkTimer = 0;
-    playerImg._lastDir = 'front';
-
-    return playerImg;
-}
 
     updatePlayerSprite(player, vx, vy) {
         if (!player || !player.setTexture) return;
@@ -113,7 +152,6 @@ class BaseScene extends Phaser.Scene {
                 }
             }
         } else {
-            // En reposo: imagen frontal
             const k = g === 'f' ? 'chica' : 'chico';
             if (this.textures.exists(k)) player.setTexture(k);
         }
@@ -161,7 +199,6 @@ class BaseScene extends Phaser.Scene {
         dialog.visible = false;
     }
 
-    // Humo estilo pixel (cuadrados, no círculos)
     createPixelSmoke(x, y) {
         const emitSmoke = () => {
             const puff = this.add.rectangle(
@@ -187,7 +224,7 @@ class BaseScene extends Phaser.Scene {
     }
 
     // ============================================================
-    // MULTIPLAYER (igual que antes)
+    // MULTIPLAYER
     // ============================================================
     setupMultiplayer() {
         if (window.multiplayer && !window.multiplayer.connected) {
@@ -274,7 +311,7 @@ class BaseScene extends Phaser.Scene {
 }
 
 // ============================================================
-// ESCENA 1: EXTERIOR
+// ESCENA 1: EXTERIOR (con bloques de colisión)
 // ============================================================
 class ExteriorScene extends BaseScene {
     constructor() { super('ExteriorScene'); }
@@ -282,7 +319,6 @@ class ExteriorScene extends BaseScene {
     preload() {
         this.load.image('exterior', 'assets/backgrounds/exterior.png');
         this.preloadCharacters();
-        // Textura de partícula
         const g = this.make.graphics({ x: 0, y: 0, add: false });
         g.fillStyle(0xffffff);
         g.fillRect(0, 0, 4, 4);
@@ -297,37 +333,39 @@ class ExteriorScene extends BaseScene {
             this.cameras.main.setBackgroundColor('#2d5016');
         }
 
-        // Humo pixelado sobre chimenea exterior (aprox centro-superior)
-        // Coordenada de referencia: chimenea de la casa en exterior.png
-        // Ajusta estos valores según tu imagen
-        this.createPixelSmoke(458, 124);   // <-- COORDENADA CHIMENEA EXTERIOR (ajustable)
+        this.createPixelSmoke(458, 124);
 
-        // Límite inferior del mundo (borde)
+        // Límite inferior del mundo
         this.physics.world.setBounds(0, 300, 800, 165);
 
         // Jugador
         this.player = this.createPlayer(400, 400);
 
-        // --- PUERTA DE ENTRADA (rectángulo transparente, ajustable) ---
-        // Coordenadas: x=400, y=270, ancho=40, alto=10
-        // Mueve este rectángulo en tu imagen para alinear con la puerta real
+        // ============================================================
+        // BLOQUES DE COLISIÓN — Ejemplos (modifica según tu imagen)
+        // ============================================================
+        // this.createCollisionBlock(x, y, width, height);
+        // Ejemplo: árbol en el exterior
+        // this.createCollisionBlock(200, 350, 60, 60);
+        // Ejemplo: roca
+        // this.createCollisionBlock(600, 360, 40, 30);
+        // ============================================================
+
+        // Puerta de entrada
         this.doorZone = this.add.rectangle(400, 270, 40, 30, 0x00f5ff, 0);
         this.doorZone.setDepth(5);
         this.physics.add.existing(this.doorZone, true);
 
-        // Indicador de puerta
         this.doorIndicator = this.add.text(405, 235, '▼ ENTRAR', {
             fontFamily: '"Press Start 2P", monospace',
             fontSize: '6px', color: '#00f5ff'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
 
-        // Diálogo inicial
         this.dialog = this.createDialogBox();
         this.showDialog(this.dialog,
             'Bienvenido a tu casa de campo.\nUsa WASD o flechas para moverte.\nAcércate a la puerta y presiona ESPACIO para entrar.');
         this.dialogShown = true;
 
-        // Controles
         this.cursors = this.input.keyboard.createCursorKeys();
         this.wasd = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -360,7 +398,6 @@ class ExteriorScene extends BaseScene {
             window.multiplayer.sendMove(this.player.x, this.player.y);
         }
 
-        // ← NUEVO: Actualizar interpolación de otros jugadores cada frame
         if (window.multiplayer) {
             window.multiplayer.update(this, delta);
         }
@@ -386,7 +423,7 @@ class ExteriorScene extends BaseScene {
 }
 
 // ============================================================
-// ESCENA 2: CASA INTERIOR
+// ESCENA 2: CASA INTERIOR (sin cambios — ya tiene colisiones)
 // ============================================================
 class CasaScene extends BaseScene {
     constructor() { super('CasaScene'); }
@@ -397,39 +434,26 @@ class CasaScene extends BaseScene {
     }
 
     create() {
-        // Fondo
         if (this.textures.exists('house')) {
             this.add.image(400, 225, 'house').setDisplaySize(800, 450).setDepth(0);
         } else {
             this.cameras.main.setBackgroundColor('#3d2817');
         }
 
-        // Chimenea interior (ajusta coordenadas según house.png)
-        // REFERENCIA: chimenea aprox en x=200, y=180
-        this.createFireEmbers(215, 145);  // <-- COORDENADA CHIMENEA INTERIOR (ajustable)
+        this.createFireEmbers(215, 145);
 
-        // Jugador
         this.player = this.createPlayer(400, 350);
 
-        // ─── BLOQUES DE COLISIÓN INVISIBLES (ajustables) ───
-        // Escritorio/mesa: aprox x=400, y=200, 120x40
-        this.createCollisionBlock(145, 330, 260, 140);   // <-- ESCRITORIO (ajustable)
-        // Sofá: aprox x=550, y=320, 140x50
-        this.createCollisionBlock(658, 240, 206, 80);   // <-- SOFÁ (ajustable)
-        // TV: aprox x=550, y=320, 140x50
-        this.createCollisionBlock(660, 310, 157, 96);   // <-- TV (ajustable)
-        // Chimenea: aprox x=550, y=320, 140x50
-        this.createCollisionBlock(210, 158, 120, 40);   // <-- Chimenes (ajustable)
-        // Mesa: aprox x=550, y=320, 140x50
-        this.createCollisionBlock(410, 158, 240, 50);   // <-- Mesa (ajustable)
-        // Estantería: aprox x=650, y=150, 80x120
-        this.createCollisionBlock(663, 160, 110, 40);   // <-- ESTANTERÍA (ajustable)
+        // Bloques de colisión existentes
+        this.createCollisionBlock(145, 330, 260, 140);
+        this.createCollisionBlock(658, 240, 206, 80);
+        this.createCollisionBlock(660, 310, 157, 96);
+        this.createCollisionBlock(210, 158, 120, 40);
+        this.createCollisionBlock(410, 158, 240, 50);
+        this.createCollisionBlock(663, 160, 110, 40);
 
-        // Límites del mundo (interior de la habitación)
         this.physics.world.setBounds(0, 158, 800, 250);
 
-        // --- PUERTA SECRETA (rectángulo transparente, ajustable) ---
-        // Aprox x=100, y=150
         this.secretZone = this.add.rectangle(100, 150, 50, 80, 0x00f5ff, 0);
         this.secretZone.setDepth(5);
         this.physics.add.existing(this.secretZone, true);
@@ -439,7 +463,6 @@ class CasaScene extends BaseScene {
             fontSize: '14px', color: '#00f5ff'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
 
-        // Salida de la casa (bottom)
         this.exitZone = this.add.rectangle(400, 420, 100, 20, 0xff0000, 0);
         this.physics.add.existing(this.exitZone, true);
         this.exitIndicator = this.add.text(400, 400, '▼ SALIR', {
@@ -447,13 +470,11 @@ class CasaScene extends BaseScene {
             fontSize: '8px', color: '#ff6b35'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
 
-        // Diálogo
         this.dialog = this.createDialogBox();
         this.showDialog(this.dialog,
             'Esta es tu casa. Hay algo extraño\nen esa puerta de la izquierda...\nAcércate y presiona ESPACIO.');
         this.dialogShown = true;
 
-        // Controles
         this.cursors = this.input.keyboard.createCursorKeys();
         this.wasd = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -467,22 +488,7 @@ class CasaScene extends BaseScene {
         this.setupMultiplayer();
     }
 
-    createCollisionBlock(x, y, w, h) {
-        const block = this.add.rectangle(x, y, w, h, 0xff0000, 0); // alpha=0: invisible
-        block.setDepth(2);
-        this.physics.add.existing(block, true); // static
-        if (this.player) {
-            this.physics.add.collider(this.player, block);
-        }
-        // Guardamos para agregar colisión tras crear jugador si no existe aún
-        if (!this._collisionBlocks) this._collisionBlocks = [];
-        this._collisionBlocks.push(block);
-        return block;
-    }
-
-    // Fuego de chimenea con chispas pixel (no círculos)
     createFireEmbers(x, y) {
-        // Llama pixelada
         this.time.addEvent({
             delay: 120,
             callback: () => {
@@ -525,7 +531,6 @@ class CasaScene extends BaseScene {
             window.multiplayer.sendMove(this.player.x, this.player.y);
         }
 
-        // ← NUEVO: Actualizar interpolación de otros jugadores cada frame
         if (window.multiplayer) {
             window.multiplayer.update(this, delta);
         }
@@ -564,7 +569,7 @@ class CasaScene extends BaseScene {
 }
 
 // ============================================================
-// ESCENA 3: CUARTO SECRETO / FUTURISTA
+// ESCENA 3: CUARTO SECRETO / FUTURISTA (con bloques de colisión)
 // ============================================================
 class FuturisticScene extends BaseScene {
     constructor() { super('FuturisticScene'); }
@@ -575,42 +580,39 @@ class FuturisticScene extends BaseScene {
     }
 
     create() {
-        // Fondo
         if (this.textures.exists('secretroom')) {
             this.add.image(400, 225, 'secretroom').setDisplaySize(800, 450).setDepth(0);
         } else {
             this.cameras.main.setBackgroundColor('#050510');
         }
 
-        // Líneas que atraviesan la habitación (efecto neón)
         this.createScanlines();
+        this.createMachineParticles(405, 175);
 
-        // Partículas de la máquina (pixel)
-        // COORDENADA DE REFERENCIA: x=400, y=210 (ajustable)
-        this.createMachineParticles(405, 175);  // <-- COORDENADA PARTÍCULAS MÁQUINA (ajustable)
-
-        // Lucecitas de cada máquina (ajustables)
         this.createMachineLights([
-            { x: 147, y: 180, color: 0x00f5ff },   // <-- Máquina izq (ajustable)
-            { x: 647, y: 180, color: 0x00f5ff },   // <-- Máquina der (ajustable)
+            { x: 147, y: 180, color: 0x00f5ff },
+            { x: 647, y: 180, color: 0x00f5ff },
         ]);
 
-        // Nombres/etiquetas sobre cada máquina (ajustables)
         this.createMachineLabels([
-            { x: 148, y: 80, text: 'DATOS TEMPORALES' },  // <-- (ajustable)
-            { x: 648, y: 80, text: 'COORDENADAS' },        // <-- (ajustable)
+            { x: 148, y: 80, text: 'DATOS TEMPORALES' },
+            { x: 648, y: 80, text: 'COORDENADAS' },
         ]);
 
-
-        // Jugador
         this.player = this.createPlayer(400, 370);
 
-        // --- ORBE/ZONA DE ACTIVACIÓN (círculo transparente, ajustable) ---
-        // Aprox x=400, y=210, radio=40
-        // Se usa un rectángulo transparente para la física, visualmente es el orbe de la imagen
+        // ============================================================
+        // BLOQUES DE COLISIÓN — Ejemplos (modifica según tu imagen)
+        // ============================================================
+        // this.createCollisionBlock(x, y, width, height);
+        // Ejemplo: consola izquierda
+        // this.createCollisionBlock(147, 200, 80, 60);
+        // Ejemplo: consola derecha
+        // this.createCollisionBlock(647, 200, 80, 60);
+        // ============================================================
+
         this.machineZone = this.add.circle(400, 210, 40, 0x00f5ff, 0);
         this.machineZone.setDepth(5);
-        // Para colisión usamos un rectángulo (Phaser no soporta círculo con physics fácilmente)
         const machineBody = this.add.rectangle(400, 210, 80, 80, 0x00f5ff, 0);
         this.physics.add.existing(machineBody, true);
         this._machineBody = machineBody;
@@ -620,13 +622,11 @@ class FuturisticScene extends BaseScene {
             fontSize: '7px', color: '#00f5ff'
         }).setOrigin(0.5).setVisible(false).setDepth(20);
 
-        // Diálogo
         this.dialog = this.createDialogBox();
         this.showDialog(this.dialog,
             '¡Increíble! Una máquina del tiempo real.\nAcércate y presiona ESPACIO para activarla.');
         this.dialogShown = true;
 
-        // Controles
         this.cursors = this.input.keyboard.createCursorKeys();
         this.wasd = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -638,7 +638,6 @@ class FuturisticScene extends BaseScene {
 
         this.physics.world.setBounds(30, 200, 740, 210);
 
-        // Salida
         this.exitZone = this.add.rectangle(400, 430, 80, 20, 0xff0000, 0);
         this.physics.add.existing(this.exitZone, true);
         this.exitIndicator = this.add.text(400, 410, '▼ VOLVER', {
@@ -664,7 +663,6 @@ class FuturisticScene extends BaseScene {
     }
 
     createMachineParticles(x, y) {
-        // Partículas pixeladas
         this.time.addEvent({
             delay: 80,
             callback: () => {
@@ -705,7 +703,6 @@ class FuturisticScene extends BaseScene {
 
     createMachineLabels(labels) {
         labels.forEach(l => {
-            // Línea sobre el texto
             const line = this.add.rectangle(l.x, l.y - 10, 100, 2, 0x00f5ff, 0.8);
             line.setDepth(10);
             this.tweens.add({ targets: line, alpha: { from: 0.4, to: 1 }, duration: 1200, repeat: -1, yoyo: true });
@@ -738,7 +735,6 @@ class FuturisticScene extends BaseScene {
             window.multiplayer.sendMove(this.player.x, this.player.y);
         }
 
-        // ← NUEVO: Actualizar interpolación de otros jugadores cada frame
         if (window.multiplayer) {
             window.multiplayer.update(this, delta);
         }
@@ -801,7 +797,7 @@ class FuturisticScene extends BaseScene {
 }
 
 // ============================================================
-// ESCENA 4: SELECTOR DE ÉPOCAS (sin cambios de layout)
+// ESCENA 4: SELECTOR DE ÉPOCAS — Ocultar jugador local
 // ============================================================
 class EpochSelectorScene extends BaseScene {
     constructor() { super('EpochSelectorScene'); }
@@ -985,43 +981,117 @@ class EpochSelectorScene extends BaseScene {
         this.cameras.main.fadeOut(400);
         this.time.delayedCall(400, () => this.scene.start('FuturisticScene'));
     }
+
+    // ============================================================
+    // OVERRIDE: No mostrar sprite del jugador local en esta escena
+    // ============================================================
+    update(time, delta) {
+        // En el selector de épocas NO hay movimiento del jugador local,
+        // solo actualizamos la posición de otros jugadores
+        if (window.multiplayer) {
+            window.multiplayer.update(this, delta);
+        }
+    }
 }
 
 // ============================================================
-// ESCENA 5: ÉPOCA HISTÓRICA
+// ESCENA 5: ÉPOCA HISTÓRICA — Limpia, con fondos animados
 // ============================================================
 class EpochScene extends BaseScene {
     constructor() { super('EpochScene'); }
 
     init(data) { this.epochData = data.epoch; }
 
-    preload() { this.preloadCharacters(); }
+    preload() {
+        this.preloadCharacters();
+
+        // ============================================================
+        // CARGA DE FONDOS ANIMADOS (para épocas con animatedBg=true)
+        // ============================================================
+        // Formato de nombres: {prefix}_1.png, {prefix}_2.png, etc.
+        // Ejemplo: era1300_bg_1.png, era1300_bg_2.png, era1300_bg_3.png
+        // ============================================================
+        if (this.epochData.animatedBg && this.epochData.bgPrefix) {
+            const prefix = this.epochData.bgPrefix;
+            // Carga hasta 10 frames (ajusta según necesites)
+            // Si no existe la textura, Phaser la ignora silenciosamente
+            for (let i = 1; i <= 10; i++) {
+                this.load.image(`${prefix}_${i}`, `assets/backgrounds/${prefix}_${i}.png`);
+            }
+        }
+        // ============================================================
+        // Para épocas SIN fondo animado, carga imagen estática:
+        // this.load.image('mesopotamia_bg', 'assets/backgrounds/mesopotamia.png');
+        // this.load.image('egipto_bg', 'assets/backgrounds/egipto.png');
+        // etc.
+        // ============================================================
+        this.load.image('mesopotamia_bg', 'assets/backgrounds/mesopotamia.png');
+        this.load.image('egipto_bg', 'assets/backgrounds/egipto.png');
+        this.load.image('grecia_bg', 'assets/backgrounds/grecia.png');
+        this.load.image('edadmedia_bg', 'assets/backgrounds/edadmedia.png');
+    }
 
     create() {
         const color = this.epochData.color;
         this.cameras.main.setBackgroundColor(this.getEpochBgColor());
 
-        this.createEpochEnvironment();
+        // ============================================================
+        // FONDO: Animado o estático
+        // ============================================================
+        if (this.epochData.animatedBg && this.epochData.bgPrefix) {
+            this.createAnimatedBackground(this.epochData.bgPrefix);
+        } else {
+            // Fondo estático por época
+            const bgKey = this.epochData.id + '_bg';
+            if (this.textures.exists(bgKey)) {
+                this.add.image(400, 225, bgKey).setDisplaySize(800, 450).setDepth(0);
+            }
+        }
+
+        // ============================================================
+        // TÍTULO E INFO (con fondo opaco para legibilidad)
+        // ============================================================
+        const titleBg = this.add.rectangle(400, 45, 500, 90, 0x000000, 0.75);
+        titleBg.setDepth(5);
+        titleBg.setStrokeStyle(1, parseInt(color.replace('#', '0x')));
 
         const title = this.add.text(400, 30, `${this.epochData.icon} ${this.epochData.name}`, {
             fontFamily: '"Press Start 2P", monospace',
             fontSize: '14px', color, align: 'center'
         }).setOrigin(0.5);
         title.setShadow(0, 0, color, 10);
+        title.setDepth(6);
 
-        this.add.text(400, 55, this.epochData.period, {
+        const period = this.add.text(400, 55, this.epochData.period, {
             fontFamily: '"Share Tech Mono", monospace', fontSize: '12px', color: '#8892a4'
         }).setOrigin(0.5);
+        period.setDepth(6);
 
-        this.add.text(400, 80, this.epochData.desc, {
+        const desc = this.add.text(400, 80, this.epochData.desc, {
             fontFamily: '"VT323", monospace', fontSize: '14px',
             color: '#e0e8f0', align: 'center', wordWrap: { width: 600 }
         }).setOrigin(0.5);
+        desc.setDepth(6);
 
-        this.createEpochElements();
+        // ============================================================
+        // MÁQUINA DEL TIEMPO (funcionamiento normal)
+        // ============================================================
         this.createTimeMachineDecor(700, 380);
 
+        // ============================================================
+        // JUGADOR
+        // ============================================================
         this.player = this.createPlayer(100, 380);
+
+        // ============================================================
+        // BLOQUES DE COLISIÓN — Ejemplos (modifica según tu imagen)
+        // ============================================================
+        // this.createCollisionBlock(x, y, width, height);
+        // Ejemplo: pared izquierda
+        // this.createCollisionBlock(50, 225, 20, 450);
+        // Ejemplo: pared derecha
+        // this.createCollisionBlock(750, 225, 20, 450);
+        // ============================================================
 
         this.machineZone = this.add.rectangle(700, 380, 60, 60, 0x00f5ff, 0);
         this.physics.add.existing(this.machineZone, true);
@@ -1047,6 +1117,64 @@ class EpochScene extends BaseScene {
         this.physics.world.setBounds(50, 100, 700, 330);
         this.cameras.main.fadeIn(500);
         this.setupEpochMultiplayer();
+    }
+
+    // ============================================================
+    // SISTEMA DE FONDO ANIMADO POR SECUENCIA DE IMÁGENES
+    // ============================================================
+    // INSTRUCCIONES PARA AGREGAR MÁS FRAMES:
+    // 1. Guarda tus imágenes en assets/backgrounds/ con formato:
+    //    {prefix}_1.png, {prefix}_2.png, {prefix}_3.png, etc.
+    //    Ejemplo: era1300_bg_1.png, era1300_bg_2.png
+    // 2. En EPOCHS_DATA, asegúrate de que animatedBg: true y bgPrefix correcto
+    // 3. En preload(), ajusta el número en el for (i <= 10) si tienes más frames
+    // 4. La velocidad de cambio se controla con bgFrameDuration (ms)
+    // ============================================================
+    createAnimatedBackground(prefix) {
+        this.bgFrames = [];
+        this.bgCurrentFrame = 0;
+        this.bgFrameDuration = 200; // ms entre frames (ajustable)
+        this.bgTimer = 0;
+
+        // Detectar cuántos frames existen
+        let frameCount = 0;
+        for (let i = 1; i <= 10; i++) {
+            if (this.textures.exists(`${prefix}_${i}`)) {
+                frameCount++;
+            } else {
+                break;
+            }
+        }
+
+        if (frameCount === 0) {
+            // Fallback: fondo de color si no hay imágenes
+            this.cameras.main.setBackgroundColor('#050508');
+            return;
+        }
+
+        // Crear sprites para cada frame (todos ocultos excepto el primero)
+        for (let i = 1; i <= frameCount; i++) {
+            const frame = this.add.image(400, 225, `${prefix}_${i}`)
+                .setDisplaySize(800, 450)
+                .setDepth(0);
+            frame.setVisible(i === 1);
+            this.bgFrames.push(frame);
+        }
+
+        // Evento de tiempo para cambiar frames
+        this.bgAnimationEvent = this.time.addEvent({
+            delay: this.bgFrameDuration,
+            callback: () => {
+                if (this.bgFrames.length === 0) return;
+                // Ocultar frame actual
+                this.bgFrames[this.bgCurrentFrame].setVisible(false);
+                // Avanzar al siguiente
+                this.bgCurrentFrame = (this.bgCurrentFrame + 1) % this.bgFrames.length;
+                // Mostrar nuevo frame
+                this.bgFrames[this.bgCurrentFrame].setVisible(true);
+            },
+            loop: true
+        });
     }
 
     setupEpochMultiplayer() {
@@ -1092,93 +1220,6 @@ class EpochScene extends BaseScene {
         return info[this.epochData.id] || '';
     }
 
-    createEpochEnvironment() {
-        const groundY = 350;
-        switch(this.epochData.id) {
-            case 'mesopotamia':
-                this.add.rectangle(400, groundY, 800, 100, 0xC4A35A);
-                this.add.ellipse(200, groundY, 150, 30, 0x4169E1, 0.6);
-                this.add.ellipse(600, groundY, 120, 25, 0x4169E1, 0.6);
-                break;
-            case 'egipto':
-                this.add.rectangle(400, groundY, 800, 100, 0xF4A460);
-                this.add.triangle(150, groundY - 50, 0, 0, 80, 0, 40, -60, 0xDAA520);
-                this.add.triangle(300, groundY - 30, 0, 0, 60, 0, 30, -40, 0xDAA520);
-                break;
-            case 'grecia':
-                this.add.rectangle(400, groundY, 800, 100, 0xF5F5DC);
-                for (let x = 100; x < 800; x += 150) {
-                    this.add.rectangle(x, groundY - 40, 20, 80, 0xE6E6FA);
-                    this.add.rectangle(x, groundY - 80, 30, 10, 0xE6E6FA);
-                }
-                break;
-            case 'edadmedia':
-                this.add.rectangle(400, groundY, 800, 100, 0x5a4a3a);
-                this.add.rectangle(400, groundY - 60, 120, 80, 0x696969);
-                this.add.rectangle(400, groundY - 100, 140, 20, 0x2F4F4F);
-                break;
-            case 'era1300':
-                this.add.rectangle(400, groundY, 800, 100, 0x556B2F);
-                this.add.rectangle(600, groundY - 40, 30, 80, 0x8B4513);
-                const blades = this.add.rectangle(600, groundY - 80, 80, 6, 0x8B4513);
-                this.tweens.add({ targets: blades, angle: 360, duration: 4000, repeat: -1 });
-                break;
-            case 'era1700':
-                this.add.rectangle(400, groundY, 800, 100, 0x4a4a4a);
-                this.add.rectangle(200, groundY - 60, 30, 80, 0x696969);
-                this.add.rectangle(250, groundY - 40, 25, 60, 0x696969);
-                this.createPixelSmoke(200, groundY - 100);
-                this.createPixelSmoke(250, groundY - 80);
-                break;
-            case 'sigloxx':
-                this.add.rectangle(400, groundY, 800, 100, 0x2F2F2F);
-                this.add.rectangle(200, groundY - 50, 80, 100, 0x4682B4);
-                this.add.rectangle(600, groundY - 70, 100, 140, 0x708090);
-                break;
-            case 'sigloxxi':
-                this.add.rectangle(400, groundY, 800, 100, 0x1a1a2e);
-                this.add.rectangle(200, groundY - 80, 60, 160, 0x00f5ff, 0.3);
-                this.add.rectangle(600, groundY - 100, 80, 200, 0xbf5fff, 0.3);
-                for (let i = 0; i < 5; i++) {
-                    const line = this.add.line(400, groundY - 50 + i * 20, 0, 0, 800, 0, 0x00f5ff, 0.2);
-                    this.tweens.add({ targets: line, alpha: { from: 0.1, to: 0.5 }, duration: 1000 + i * 200, repeat: -1, yoyo: true });
-                }
-                break;
-        }
-    }
-
-    createEpochElements() {
-        const groundY = 350;
-        switch(this.epochData.id) {
-            case 'mesopotamia':
-                this.add.rectangle(300, groundY - 20, 30, 20, 0x8B4513);
-                this.add.text(300, groundY - 20, '𒀭', { fontSize: '16px' }).setOrigin(0.5);
-                break;
-            case 'egipto':
-                this.add.text(500, groundY - 30, '𓂀 𓃻 𓆣', { fontSize: '20px' }).setOrigin(0.5);
-                break;
-            case 'grecia':
-                this.add.text(500, groundY - 30, 'π ∑ √', { fontSize: '24px', color: '#8B4513' }).setOrigin(0.5);
-                break;
-            case 'edadmedia':
-                this.add.text(500, groundY - 30, 'x² + y² = z²', { fontSize: '16px', color: '#DAA520' }).setOrigin(0.5);
-                break;
-            case 'era1300':
-                this.add.text(500, groundY - 30, '∫ dx', { fontSize: '20px', color: '#8B4513' }).setOrigin(0.5);
-                break;
-            case 'era1700':
-                this.add.circle(500, groundY - 30, 15, 0x8B7355);
-                this.add.circle(500, groundY - 30, 5, 0x4a4a4a);
-                break;
-            case 'sigloxx':
-                this.add.text(500, groundY - 30, '101010', { fontFamily: 'monospace', fontSize: '16px', color: '#00ff00' }).setOrigin(0.5);
-                break;
-            case 'sigloxxi':
-                this.add.text(500, groundY - 30, 'Ψ |0⟩ |1⟩', { fontSize: '18px', color: '#00f5ff' }).setOrigin(0.5);
-                break;
-        }
-    }
-
     createTimeMachineDecor(x, y) {
         const base = this.add.ellipse(x, y + 20, 60, 20, 0x2a2a4a);
         base.setStrokeStyle(2, 0x00f5ff);
@@ -1208,7 +1249,6 @@ class EpochScene extends BaseScene {
             window.multiplayer.sendMove(this.player.x, this.player.y);
         }
 
-        // ← NUEVO: Actualizar interpolación de otros jugadores cada frame
         if (window.multiplayer) {
             window.multiplayer.update(this, delta);
         }
@@ -1227,6 +1267,10 @@ class EpochScene extends BaseScene {
     }
 
     returnToSelector() {
+        // Limpiar animación de fondo si existe
+        if (this.bgAnimationEvent) {
+            this.bgAnimationEvent.remove();
+        }
         this.notifySceneChange('EpochSelectorScene');
         this.cameras.main.shake(100, 0.01);
 

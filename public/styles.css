@@ -424,6 +424,44 @@ footer{background:var(--bg2);border-top:1px solid rgba(255,255,255,.07);padding:
   #play.active ~ * .mobile-controls,
   .mobile-controls{display:none;}
   #play.active .mobile-controls{display:flex;}
+
+  /* Placeholder nunca se corta: el contenedor crece con el contenido */
+  .game-container:has(#game-placeholder:not([style*="display:none"]):not([style*="display: none"])) {
+    aspect-ratio: unset;
+    height: auto;
+    overflow: visible;
+  }
+  .game-placeholder {
+    position: relative;
+    inset: unset;
+    overflow: visible;
+    padding: 1.5rem 1rem;
+  }
+  .placeholder-content {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .placeholder-content > div {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+  #pregame-name-input {
+    font-size: 1rem !important;
+  }
+  .start-game-btn {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+    line-height: 1.6;
+  }
+  /* Una vez el juego arranca, restaurar aspect-ratio */
+  .game-container.game-active {
+    aspect-ratio: 16/9 !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
 }
 @media(max-width:560px){
   .section{padding-left:1rem;padding-right:1rem;}
@@ -456,6 +494,61 @@ footer{background:var(--bg2);border-top:1px solid rgba(255,255,255,.07);padding:
   box-shadow: 0 0 20px rgba(0,245,255,.5);
 }
 
+
+/* ============================================================
+   SIGLO XXI — Aviso móvil "desktop only"
+   ============================================================ */
+.desktop-mobile-notice {
+  display: none;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.2rem;
+  background: rgba(0, 15, 30, 0.85);
+  border: 2px solid var(--accent, #00f5ff);
+  border-radius: var(--r, 8px);
+  box-shadow: 0 0 18px rgba(0, 245, 255, 0.2), inset 0 0 40px rgba(0, 245, 255, 0.03);
+  backdrop-filter: blur(12px);
+  margin-bottom: 1.2rem;
+  max-width: 480px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.desktop-mobile-notice__icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--accent, #00f5ff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fm, 'Share Tech Mono', monospace);
+  font-size: 0.85rem;
+  color: var(--accent, #00f5ff);
+  font-style: italic;
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.35);
+  margin-top: 0.1rem;
+}
+
+.desktop-mobile-notice__text {
+  font-family: var(--ft, 'VT323', monospace);
+  font-size: 1.05rem;
+  color: var(--text, #e0e8f0);
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .desktop-mobile-notice {
+    display: flex;
+  }
+  #desktop-container {
+    display: none !important;
+  }
+}
 
 /* ============================================================
    SIGLO XXI — Estilos adicionales responsive
@@ -599,4 +692,80 @@ footer{background:var(--bg2);border-top:1px solid rgba(255,255,255,.07);padding:
     height: 12px;
     font-size: 0.4rem;
   }
+}
+
+/* ============================================================
+   BOTÓN DESCUBRIR MÁS — Siglo XXI
+   ============================================================ */
+.ep-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.ep-btn-discover {
+  background: linear-gradient(135deg, var(--purple,#bf5fff), var(--accent,#00f5ff)) !important;
+  color: #fff !important;
+  border: none !important;
+  animation: discoverPulse 2s ease-in-out infinite;
+}
+
+.ep-btn-discover:hover {
+  transform: translate(-2px,-3px) !important;
+  box-shadow: 5px 6px 0 rgba(0,0,0,.5), 0 0 28px rgba(191,95,255,.6) !important;
+}
+
+@keyframes discoverPulse {
+  0%, 100% { box-shadow: 3px 3px 0 rgba(0,0,0,.5), 0 0 10px rgba(191,95,255,.4); }
+  50% { box-shadow: 3px 3px 0 rgba(0,0,0,.5), 0 0 20px rgba(191,95,255,.7), 0 0 40px rgba(0,245,255,.3); }
+}
+
+/* ============================================================
+   MAPA MEJORADO — Estilos adicionales
+   ============================================================ */
+#map-canvas {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.map-shell {
+  position: relative;
+  background: #040608;
+  border: 2px solid rgba(255,255,255,.1);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: border-color .5s, box-shadow .5s;
+}
+
+.map-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.3) 100%),
+    linear-gradient(90deg, rgba(0,0,0,0.3) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.3) 100%);
+  z-index: 5;
+}
+/* ── MAPA SVG RESPONSIVE FIX ────────────────────────── */
+#map-svg-wrap {
+  pointer-events: none;
+}
+#map-svg-wrap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#map-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 3;
+}
+.map-shell {
+  /* Asegura que el shell ocupe espacio vertical real */
+  min-height: 260px;
 }
