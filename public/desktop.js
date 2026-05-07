@@ -1,390 +1,357 @@
 /* =============================================================
-   DESKTOP SIGLO XXI — Escritorio PC funcional con carpetas y documentos
-   v1.0 — Sistema de archivos virtual, ventanas arrastrables, apps
+   DESKTOP SIGLO XXI v3.4 — Barra de tareas con Avances y Autores
+   - Avances y Autores como apps separadas en la barra
+   - Vista previa con cierre automático a 2s, permanece con hover
+   - Click: 0 ventanas → nueva, 1 ventana → toggle, 2+ → vista previa
    ============================================================= */
 
+const ASSETS = {
+  wallpaper:     'assets/desktop/wallpaper.png',
+  startIcon:     'assets/desktop/icon-start.png',
+  terminalIcon:  'assets/desktop/icon-terminal.png',
+  browserIcon:   'assets/desktop/icon-browser.png',
+  trashIcon:     'assets/desktop/icon-trash.png',
+  app1Icon:      'assets/desktop/icon-app1.png',
+  app2Icon:      'assets/desktop/icon-app2.png',
+  app3Icon:      'assets/desktop/icon-app3.png',
+  app4Icon:      'assets/desktop/icon-app4.png',
+  app5Icon:      'assets/desktop/icon-app5.png',
+  folderIcon:    'assets/desktop/icon-folder.png',
+  folderDocs:    'assets/desktop/icon-folder-docs.png',
+  docAdvances:   'assets/desktop/icon-doc-advances.png',
+  docAuthors:    'assets/desktop/icon-doc-authors.png',
+  barapp1:       'assets/desktop/barapp1.png',
+  barapp2:       'assets/desktop/barapp2.png',
+  barapp3:       'assets/desktop/barapp3.png',
+};
+
 // ============================================================
-// SISTEMA DE ARCHIVOS VIRTUAL
+// CONTENIDO DE LOS 9 AVANCES
+// ============================================================
+const AVANCES_CONTENT = {
+  adv1: {
+    title: 'Web 2.0 en adelante',
+    body: `<h1>Web 2.0 en adelante</h1>
+    <h2>Web 2.0 (La Web Social, 2000-2010)</h2>
+    <p>Introdujo la interactividad, permitiendo a los usuarios generar contenido (UGC), comentar y compartir. Surgieron las redes sociales, blogs, wikis y aplicaciones web dinámicas.</p>
+    <h2>Web 3.0 (La Web Semántica/Inteligente, 2010-Presente)</h2>
+    <p>Enfocada en la comprensión de datos por máquinas, la descentralización (blockchain) y la Inteligencia Artificial (IA). Busca ofrecer búsquedas más relevantes y personalizadas, y la interacción se da en múltiples dispositivos.</p>
+    <h2>Web 4.0 (La Web Ubicua/Inteligente, Futuro/Actual)</h2>
+    <p>Se centra en la integración completa de la IA, voz como interfaz (chatbots), y el Internet de las cosas (IoT). Busca predecir comportamientos y ofrecer soluciones en tiempo real.</p>`
+  },
+  adv2: {
+    title: 'Redes 3G en adelante',
+    body: `<h1>Redes 3G en adelante</h1>
+    <h2>3G (Años 2000)</h2>
+    <p>Llegada de la banda ancha móvil. Permitió la navegación por internet, compartir fotos y velocidades de datos superiores.</p>
+    <h2>4G (Años 2010)</h2>
+    <p>Basado en el estándar LTE (Long-Term Evolution), ofreció altas velocidades (hasta 1 Gbps) para streaming HD y videollamadas. Cambió a redes totalmente IP (conmutación de paquetes).</p>
+    <h2>5G (Actualidad)</h2>
+    <p>Ofrece velocidades mucho más rápidas, latencia extremadamente baja y mayor fiabilidad para la interconexión masiva de dispositivos (IoT).</p>`
+  },
+  adv3: {
+    title: 'Smartphones',
+    body: `<h1>Smartphones</h1>
+    <p>Un smartphone, o teléfono inteligente, es un dispositivo móvil avanzado que combina funciones de telefonía celular con capacidades de computación de bolsillo, operando bajo sistemas como Android o iOS.</p>
+    <h2>Características principales</h2>
+    <ul>
+      <li><strong>Conectividad:</strong> Wi-Fi, Bluetooth, 4G/5G, NFC</li>
+      <li><strong>Multimedia:</strong> Cámara de alta resolución, reproductor de vídeo y música</li>
+      <li><strong>Funcionalidades:</strong> Agenda, calculadora, correo electrónico, redes sociales</li>
+      <li><strong>Hardware:</strong> Pantallas táctiles de alta definición y procesadores rápidos</li>
+      <li><strong>Aplicaciones:</strong> Acceso a tiendas de aplicaciones (Google Play, App Store)</li>
+    </ul>`
+  },
+  adv4: {
+    title: 'Redes Sociales',
+    body: `<h1>Redes Sociales</h1>
+    <p>Las redes sociales son plataformas digitales que permiten a personas y organizaciones conectarse, comunicarse y compartir contenido en tiempo real a través de Internet.</p>
+    <h2>Principales Redes Sociales (2026)</h2>
+    <ul>
+      <li><strong>Facebook:</strong> Lidera con más de 3.000 millones de usuarios</li>
+      <li><strong>YouTube:</strong> Plataforma principal de vídeo</li>
+      <li><strong>Instagram:</strong> Enfocada en contenido visual</li>
+      <li><strong>WhatsApp:</strong> Principal herramienta de mensajería instantánea</li>
+      <li><strong>TikTok:</strong> Alta popularidad en vídeos cortos</li>
+      <li><strong>LinkedIn:</strong> Red enfocada al ámbito profesional</li>
+      <li><strong>Telegram:</strong> Mensajería y canales de difusión</li>
+    </ul>`
+  },
+  adv5: {
+    title: 'Inteligencia Artificial (IA)',
+    body: `<h1>Inteligencia Artificial (IA)</h1>
+    <p>La inteligencia artificial (IA) es un conjunto de tecnologías que permiten a las computadoras aprender, razonar, percibir y tomar decisiones, simulando capacidades cognitivas humanas.</p>
+    <h2>Aspectos clave</h2>
+    <ul>
+      <li><strong>Aprendizaje y Adaptación:</strong> Las máquinas aprenden de la experiencia y mejoran con el tiempo</li>
+      <li><strong>Funciones Principales:</strong> Reconocimiento de voz, traducción de idiomas, toma de decisiones</li>
+      <li><strong>Tipos de IA:</strong> IA estrecha (tareas específicas) e IA General (investigación)</li>
+      <li><strong>Impacto:</strong> Algoritmos de recomendación, conducción autónoma, diagnóstico de enfermedades</li>
+      <li><strong>Desafíos:</strong> Sesgos en datos, regulación ética, impacto laboral</li>
+    </ul>
+    <p>Modelos populares: ChatGPT, Claude y Gemini.</p>`
+  },
+  adv6: {
+    title: 'Grafeno',
+    body: `<h1>Grafeno</h1>
+    <p>El grafeno es un material bidimensional formado por una sola capa de átomos de carbono dispuestos en un patrón hexagonal. Es extremadamente ligero, transparente, flexible y 200 veces más resistente que el acero.</p>
+    <h2>Características Principales</h2>
+    <ul>
+      <li><strong>Estructura:</strong> Átomos de carbono en red hexagonal</li>
+      <li><strong>Resistencia:</strong> 200 veces más resistente que el acero</li>
+      <li><strong>Conductividad:</strong> Excelente conductor de electricidad y calor</li>
+      <li><strong>Flexibilidad:</strong> Material bidimensional muy flexible</li>
+      <li><strong>Impermeabilidad:</strong> Impermeable a los gases</li>
+    </ul>
+    <h2>Aplicaciones</h2>
+    <ul>
+      <li>Electrónica: microchips, transistores, pantallas táctiles flexibles</li>
+      <li>Energía: baterías y placas solares más eficientes</li>
+      <li>Materiales: compuestos ligeros para aeroespacial y automoción</li>
+      <li>Medicina: sensores médicos y sistemas de liberación de fármacos</li>
+    </ul>`
+  },
+  adv7: {
+    title: 'Impresión 3D',
+    body: `<h1>Impresión 3D</h1>
+    <p>La impresión 3D, o fabricación aditiva, crea objetos tridimensionales superponiendo capas sucesivas de material (plásticos, metales, resinas) a partir de un diseño digital.</p>
+    <h2>Aspectos Clave</h2>
+    <ul>
+      <li><strong>Proceso:</strong> Modelo virtual (CAD) interpretado capa por capa</li>
+      <li><strong>Materiales:</strong> PLA (ecológico), ABS (industrial), Resina (alta precisión)</li>
+      <li><strong>Tecnologías:</strong> FDM/FFF, SLA/DLP, SLS</li>
+      <li><strong>Software:</strong> Rhinoceros, AutoCAD, SolidWorks, Blender, FreeCAD</li>
+    </ul>
+    <h2>Aplicaciones</h2>
+    <p>Prototipado, implantes médicos, automoción, aeroespacial y educación.</p>`
+  },
+  adv8: {
+    title: 'Blockchain',
+    body: `<h1>Blockchain</h1>
+    <p>La tecnología blockchain es un libro de contabilidad digital descentralizado, inmutable y compartido que registra transacciones de forma segura mediante criptografía.</p>
+    <h2>Características Clave</h2>
+    <ul>
+      <li><strong>Descentralización:</strong> Información distribuida en múltiples nodos</li>
+      <li><strong>Inmutabilidad:</strong> Información casi imposible de falsificar</li>
+      <li><strong>Seguridad:</strong> Criptografía avanzada para vincular bloques</li>
+      <li><strong>Contratos Inteligentes:</strong> Automatización de acuerdos sin terceros</li>
+    </ul>
+    <h2>Aplicaciones</h2>
+    <ul>
+      <li>Criptomonedas: Bitcoin y Ethereum</li>
+      <li>Cadena de Suministro: trazabilidad de productos</li>
+      <li>Finanzas: transferencias de activos rápidas y seguras</li>
+      <li>Votación y Contratos: procesos electorales seguros</li>
+    </ul>`
+  },
+  adv9: {
+    title: 'Computación Cuántica',
+    body: `<h1>Computación Cuántica</h1>
+    <p>La computación cuántica utiliza principios de la mecánica cuántica, como la superposición y el entrelazamiento, para procesar información a velocidades inalcanzables para ordenadores clásicos.</p>
+    <h2>Conceptos Clave</h2>
+    <ul>
+      <li><strong>Cúbits (Qubits):</strong> Pueden estar en superposición de estados (0 y 1 a la vez)</li>
+      <li><strong>Superposición:</strong> Explora múltiples soluciones simultáneamente</li>
+      <li><strong>Entrelazamiento:</strong> Estado de un cúbit afecta a otro instantáneamente</li>
+      <li><strong>Interferencia:</strong> Amplifica trayectorias correctas, cancela incorrectas</li>
+    </ul>
+    <h2>Aplicaciones Potenciales</h2>
+    <ul>
+      <li>Descubrimiento de fármacos y materiales</li>
+      <li>Optimización logística y financiera</li>
+      <li>Criptografía y seguridad</li>
+      <li>Inteligencia Artificial y machine learning</li>
+    </ul>`
+  }
+};
+
+// ============================================================
+// SISTEMA DE ARCHIVOS
 // ============================================================
 const FILE_SYSTEM = {
   id: 'root',
   name: 'Escritorio',
   type: 'folder',
-  icon: 'assets/desktop/pc-icon.png',
+  icon: ASSETS.folderIcon,
+  isDesktop: true,
   children: [
+    { id: 'terminal', name: 'Terminal', type: 'app', appType: 'terminal', icon: ASSETS.terminalIcon, clickable: true, onDesktop: true, onStart: true },
+    { id: 'browser', name: 'Explorador Web', type: 'app', appType: 'browser', icon: ASSETS.browserIcon, clickable: true, onDesktop: true, onStart: true },
+    { id: 'trash', name: 'Papelera', type: 'folder', icon: ASSETS.trashIcon, clickable: false, onDesktop: true, onStart: true, children: [] },
+    { id: 'app1', name: 'Larp', type: 'app', appType: 'custom', icon: ASSETS.app1Icon, clickable: false, onDesktop: true },
+    { id: 'app2', name: 'Steam', type: 'app', appType: 'custom', icon: ASSETS.app2Icon, clickable: false, onDesktop: true },
+    { id: 'app3', name: 'Discord', type: 'app', appType: 'custom', icon: ASSETS.app3Icon, clickable: false, onDesktop: true },
+    { id: 'app4', name: 'Minecraft Launcher', type: 'app', appType: 'custom', icon: ASSETS.app4Icon, clickable: false, onDesktop: true },
+    { id: 'app5', name: 'VSCode', type: 'app', appType: 'custom', icon: ASSETS.app5Icon, clickable: false, onDesktop: true },
+    { id: 'carpeta1', name: 'NO ENTRAR', type: 'folder', icon: ASSETS.folderIcon, clickable: false, onDesktop: true, children: [] },
     {
-      id: 'docs',
+      id: 'documentos',
       name: 'Documentos',
       type: 'folder',
-      icon: 'assets/desktop/folder-documents.png',
+      icon: ASSETS.folderIcon,
+      clickable: true,
+      onDesktop: true,
+      onStart: true,
       children: [
+        { id: 'carpeta2', name: 'Primer Semestre', type: 'folder', icon: ASSETS.folderIcon, clickable: false, children: [] },
         {
-          id: 'doc-ia',
-          name: 'IA y Machine Learning.docx',
-          type: 'document',
-          icon: 'assets/desktop/file-word.png',
-          content: {
-            title: 'Inteligencia Artificial y Machine Learning',
-            body: `
-              <h1>Inteligencia Artificial y Machine Learning</h1>
-              <p>La inteligencia artificial (IA) es una disciplina del conocimiento que se ocupa de crear 
-              sistemas capaces de realizar tareas que normalmente requieren inteligencia humana.</p>
-
-              <h2>Machine Learning</h2>
-              <p>El aprendizaje automático es un subconjunto de la IA que permite a las máquinas aprender 
-              de los datos sin ser programadas explícitamente para cada tarea.</p>
-
-              <h2>Aplicaciones principales</h2>
-              <ul>
-                <li>Reconocimiento de imágenes y voz</li>
-                <li>Procesamiento del lenguaje natural</li>
-                <li>Sistemas de recomendación</li>
-                <li>Vehículos autónomos</li>
-                <li>Diagnóstico médico asistido</li>
-              </ul>
-
-              <h2>Frameworks populares</h2>
-              <ul>
-                <li>TensorFlow (Google)</li>
-                <li>PyTorch (Meta)</li>
-                <li>Scikit-learn</li>
-                <li>Keras</li>
-              </ul>
-            `
-          }
+          id: 'avances',
+          name: 'Avances e Inventos',
+          type: 'folder',
+          icon: ASSETS.folderIcon,
+          clickable: true,
+          children: [
+            { id: 'adv1', name: 'WEBs.docx', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv1, appGroup: 'avances' },
+            { id: 'adv2', name: 'Redes.docx', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv2, appGroup: 'avances' },
+            { id: 'adv3', name: 'Smartphones.docx', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv3, appGroup: 'avances' },
+            { id: 'adv4', name: 'Redes Sociales.docx', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv4, appGroup: 'avances' },
+            { id: 'adv5', name: 'IA.docx', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv5, appGroup: 'avances' },
+            { id: 'adv6', name: 'Grafeno.docx', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv6, appGroup: 'avances' },
+            { id: 'adv7', name: 'Impresion 3D.docx', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv7, appGroup: 'avances' },
+            { id: 'adv8', name: 'Blockchain.docx', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv8, appGroup: 'avances' },
+            { id: 'adv9', name: 'Computación Cuántica', type: 'document', icon: ASSETS.docAdvances, clickable: true, content: AVANCES_CONTENT.adv9, appGroup: 'avances' },
+          ]
         },
         {
-          id: 'doc-cloud',
-          name: 'Computación en la Nube.docx',
-          type: 'document',
-          icon: 'assets/desktop/file-word.png',
-          content: {
-            title: 'Computación en la Nube',
-            body: `
-              <h1>Computación en la Nube</h1>
-              <p>La computación en la nube es el modelo de entrega de servicios informáticos a través 
-              de Internet, permitiendo acceso a recursos como servidores, almacenamiento y bases de datos.</p>
-
-              <h2>Modelos de servicio</h2>
-              <ul>
-                <li><strong>IaaS</strong> (Infraestructura como Servicio) — AWS EC2, Azure VMs</li>
-                <li><strong>PaaS</strong> (Plataforma como Servicio) — Heroku, Google App Engine</li>
-                <li><strong>SaaS</strong> (Software como Servicio) — Gmail, Salesforce</li>
-              </ul>
-
-              <h2>Proveedores líderes</h2>
-              <ul>
-                <li>Amazon Web Services (AWS)</li>
-                <li>Microsoft Azure</li>
-                <li>Google Cloud Platform</li>
-                <li>IBM Cloud</li>
-              </ul>
-            `
-          }
-        },
-        {
-          id: 'doc-devops',
-          name: 'DevOps y CI_CD.docx',
-          type: 'document',
-          icon: 'assets/desktop/file-word.png',
-          content: {
-            title: 'DevOps y CI/CD',
-            body: `
-              <h1>DevOps y CI/CD</h1>
-              <p>DevOps es una cultura, práctica y conjunto de herramientas que integra el desarrollo 
-              de software (Dev) con las operaciones de TI (Ops).</p>
-
-              <h2>Principios fundamentales</h2>
-              <ul>
-                <li>Colaboración entre equipos</li>
-                <li>Automatización de procesos</li>
-                <li>Integración continua (CI)</li>
-                <li>Entrega continua (CD)</li>
-                <li>Monitoreo y retroalimentación</li>
-              </ul>
-
-              <h2>Herramientas esenciales</h2>
-              <ul>
-                <li>Docker — Contenedores</li>
-                <li>Kubernetes — Orquestación</li>
-                <li>Jenkins — Automatización</li>
-                <li>Git — Control de versiones</li>
-                <li>Ansible — Configuración</li>
-              </ul>
-            `
-          }
+          id: 'autores',
+          name: 'Autores',
+          type: 'folder',
+          icon: ASSETS.folderIcon,
+          clickable: true,
+          children: [
+            { id: 'aut1', name: 'Autor 1.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 1', body: '<h1>Autor 1</h1><p>Biografía del autor 1...</p>' }, appGroup: 'autores' },
+            { id: 'aut2', name: 'Autor 2.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 2', body: '<h1>Autor 2</h1><p>Biografía del autor 2...</p>' }, appGroup: 'autores' },
+            { id: 'aut3', name: 'Autor 3.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 3', body: '<h1>Autor 3</h1><p>Biografía del autor 3...</p>' }, appGroup: 'autores' },
+            { id: 'aut4', name: 'Autor 4.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 4', body: '<h1>Autor 4</h1><p>Biografía del autor 4...</p>' }, appGroup: 'autores' },
+            { id: 'aut5', name: 'Autor 5.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 5', body: '<h1>Autor 5</h1><p>Biografía del autor 5...</p>' }, appGroup: 'autores' },
+            { id: 'aut6', name: 'Autor 6.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 6', body: '<h1>Autor 6</h1><p>Biografía del autor 6...</p>' }, appGroup: 'autores' },
+          ]
         }
       ]
-    },
-    {
-      id: 'web',
-      name: 'Historia Web',
-      type: 'folder',
-      icon: 'assets/desktop/folder-web.png',
-      children: [
-        {
-          id: 'doc-web1',
-          name: 'WWW y Tim Berners-Lee.docx',
-          type: 'document',
-          icon: 'assets/desktop/file-word.png',
-          content: {
-            title: 'World Wide Web — Tim Berners-Lee',
-            body: `
-              <h1>World Wide Web (1991)</h1>
-              <p>Tim Berners-Lee inventó la World Wide Web en 1989 mientras trabajaba en el CERN. 
-              La primera página web se publicó el 20 de diciembre de 1990.</p>
-
-              <h2>Tecnologías fundamentales</h2>
-              <ul>
-                <li><strong>HTML</strong> — Lenguaje de marcado para documentos web</li>
-                <li><strong>HTTP</strong> — Protocolo de transferencia de hipertexto</li>
-                <li><strong>URL</strong> — Localizador uniforme de recursos</li>
-              </ul>
-
-              <h2>Evolución</h2>
-              <ul>
-                <li>Web 1.0 (1991-2004) — Sitios estáticos, lectura</li>
-                <li>Web 2.0 (2004-2016) — Redes sociales, interactividad</li>
-                <li>Web 3.0 (2016-presente) — Descentralización, blockchain, IA</li>
-              </ul>
-            `
-          }
-        },
-        {
-          id: 'doc-linux',
-          name: 'Linux y Open Source.docx',
-          type: 'document',
-          icon: 'assets/desktop/file-word.png',
-          content: {
-            title: 'Linux y el Movimiento Open Source',
-            body: `
-              <h1>Linux (1991)</h1>
-              <p>Linus Torvalds creó el kernel de Linux en 1991 como un proyecto personal. 
-              Hoy Linux domina servidores, supercomputadoras y dispositivos móviles (Android).</p>
-
-              <h2>Principios del Open Source</h2>
-              <ul>
-                <li>Libertad de ejecutar el programa</li>
-                <li>Libertad de estudiar y modificar el código</li>
-                <li>Libertad de redistribuir copias</li>
-                <li>Libertad de distribuir versiones modificadas</li>
-              </ul>
-
-              <h2>Distribuciones populares</h2>
-              <ul>
-                <li>Ubuntu — Amigable para usuarios</li>
-                <li>Debian — Estabilidad y software libre</li>
-                <li>Fedora — Innovación tecnológica</li>
-                <li>Arch Linux — Personalización total</li>
-              </ul>
-            `
-          }
-        }
-      ]
-    },
-    {
-      id: 'quantum',
-      name: 'Computación Cuántica',
-      type: 'folder',
-      icon: 'assets/desktop/folder-quantum.png',
-      children: [
-        {
-          id: 'doc-quantum',
-          name: 'Introducción a la Computación Cuántica.docx',
-          type: 'document',
-          icon: 'assets/desktop/file-word.png',
-          content: {
-            title: 'Computación Cuántica',
-            body: `
-              <h1>Computación Cuántica</h1>
-              <p>La computación cuántica utiliza principios de la mecánica cuántica para procesar 
-              información de formas imposibles para las computadoras clásicas.</p>
-
-              <h2>Conceptos clave</h2>
-              <ul>
-                <li><strong>Qubit</strong> — Bit cuántico que puede estar en superposición</li>
-                <li><strong>Superposición</strong> — Estado múltiple simultáneo</li>
-                <li><strong>Entrelazamiento</strong> — Correlación cuántica entre partículas</li>
-                <li><strong>Interferencia</strong> — Amplificación o cancelación de estados</li>
-              </ul>
-
-              <h2>Aplicaciones potenciales</h2>
-              <ul>
-                <li>Criptografía y seguridad</li>
-                <li>Optimización de rutas y logística</li>
-                <li>Simulación molecular para farmacéutica</li>
-                <li>Inteligencia artificial cuántica</li>
-              </ul>
-
-              <h2>Plataformas actuales</h2>
-              <ul>
-                <li>IBM Quantum</li>
-                <li>Google Quantum AI</li>
-                <li>Microsoft Azure Quantum</li>
-                <li>D-Wave Systems</li>
-              </ul>
-            `
-          }
-        }
-      ]
-    },
-    {
-      id: 'agile',
-      name: 'Metodologías Ágiles',
-      type: 'folder',
-      icon: 'assets/desktop/folder-agile.png',
-      children: [
-        {
-          id: 'doc-agile',
-          name: 'Scrum y Kanban.docx',
-          type: 'document',
-          icon: 'assets/desktop/file-word.png',
-          content: {
-            title: 'Metodologías Ágiles: Scrum y Kanban',
-            body: `
-              <h1>Scrum</h1>
-              <p>Scrum es un marco de trabajo ágil para gestión de proyectos complejos, 
-              especialmente desarrollo de software.</p>
-
-              <h2>Roles</h2>
-              <ul>
-                <li><strong>Product Owner</strong> — Define el producto y prioriza el backlog</li>
-                <li><strong>Scrum Master</strong> — Facilita el proceso y elimina obstáculos</li>
-                <li><strong>Development Team</strong> — Equipo multifuncional autoorganizado</li>
-              </ul>
-
-              <h2>Artefactos</h2>
-              <ul>
-                <li>Product Backlog — Lista priorizada de funcionalidades</li>
-                <li>Sprint Backlog — Tareas del sprint actual</li>
-                <li>Incremento — Producto potencialmente entregable</li>
-              </ul>
-
-              <h1>Kanban</h1>
-              <p>Sistema visual de gestión de trabajo que enfatiza el flujo continuo 
-              y la limitación del trabajo en progreso (WIP).</p>
-
-              <h2>Principios</h2>
-              <ul>
-                <li>Visualizar el flujo de trabajo</li>
-                <li>Limitar WIP</li>
-                <li>Gestionar el flujo</li>
-                <li>Hacer políticas explícitas</li>
-                <li>Implementar bucles de retroalimentación</li>
-              </ul>
-            `
-          }
-        }
-      ]
-    },
-    {
-      id: 'recycle',
-      name: 'Papelera',
-      type: 'folder',
-      icon: 'assets/desktop/trash-empty.png',
-      children: []
     }
   ]
 };
 
 // ============================================================
-// ESTADO DEL ESCRITORIO
+// ESTADO
 // ============================================================
 let desktopState = {
-  currentFolder: FILE_SYSTEM,
   openWindows: [],
   windowZIndex: 100,
   selectedIcon: null,
-  startMenuOpen: false
+  startMenuOpen: false,
+  initialized: false
 };
 
 let windowCounter = 0;
+
+// Mapa de grupos de apps para la barra de tareas
+const TASKBAR_APP_GROUPS = [
+  { id: 'barapp1', icon: ASSETS.barapp1, name: 'Bar App 1', match: () => false, alwaysShow: true },
+  { id: 'barapp2', icon: ASSETS.barapp2, name: 'Bar App 2', match: () => false, alwaysShow: true },
+  { id: 'barapp3', icon: ASSETS.barapp3, name: 'Bar App 3', match: () => false, alwaysShow: true },
+  { id: 'browser', icon: ASSETS.browserIcon, name: 'Explorador Web', match: w => w.app === 'browser' },
+  { id: 'terminal', icon: ASSETS.terminalIcon, name: 'Terminal', match: w => w.app === 'terminal' },
+  { id: 'explorer', icon: ASSETS.folderDocs, name: 'Explorador de Archivos', match: w => w.type === 'folder' },
+  { id: 'avances', icon: ASSETS.docAdvances, name: 'Avances e Inventos', match: w => w.appGroup === 'avances', dynamic: true },
+  { id: 'autores', icon: ASSETS.docAuthors, name: 'Autores', match: w => w.appGroup === 'autores', dynamic: true },
+];
 
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
 function initDesktop() {
+  if (desktopState.initialized) return;
+  desktopState.initialized = true;
+
+  renderWallpaper();
   renderDesktopIcons();
+  renderTaskbar();
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Cerrar menú inicio al hacer click fuera
   document.addEventListener('click', (e) => {
     const startMenu = document.getElementById('start-menu');
-    const startBtn = document.querySelector('.taskbar-start');
-    if (desktopState.startMenuOpen && 
-        !startMenu.contains(e.target) && 
-        !startBtn.contains(e.target)) {
+    const startBtn = document.getElementById('start-btn');
+    if (desktopState.startMenuOpen && startMenu && startBtn &&
+        !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
       toggleStartMenu();
     }
   });
+
+  const workspace = document.getElementById('desktop-workspace');
+  if (workspace) {
+    workspace.addEventListener('click', (e) => {
+      if (e.target === workspace || e.target.id === 'desktop-wallpaper') {
+        deselectAllIcons();
+      }
+    });
+  }
 }
 
-// ============================================================
-// RELOJ
-// ============================================================
+function renderWallpaper() {
+  const wp = document.getElementById('desktop-wallpaper');
+  if (wp) wp.style.backgroundImage = `url('${ASSETS.wallpaper}')`;
+}
+
 function updateClock() {
   const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const clock = document.getElementById('taskbar-clock');
-  if (clock) clock.textContent = `${hours}:${minutes}`;
+  const timeEl = document.getElementById('taskbar-clock-time');
+  const dateEl = document.getElementById('taskbar-clock-date');
+  if (timeEl) timeEl.textContent = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
 }
 
 // ============================================================
-// RENDERIZAR ICONOS DEL ESCRITORIO
+// ICONOS DEL ESCRITORIO
 // ============================================================
 function renderDesktopIcons() {
   const container = document.getElementById('desktop-icons');
   if (!container) return;
-
   container.innerHTML = '';
 
-  desktopState.currentFolder.children.forEach(item => {
-    const iconEl = document.createElement('div');
-    iconEl.className = 'desktop-icon';
-    iconEl.dataset.id = item.id;
-    iconEl.dataset.type = item.type;
+  const desktopItems = FILE_SYSTEM.children.filter(item => item.onDesktop);
 
-    // Icono (con fallback si no existe la imagen)
+  desktopItems.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'desktop-icon clickable';
+    el.dataset.id = item.id;
+    el.dataset.type = item.type;
+
     const img = document.createElement('img');
     img.className = 'desktop-icon-img';
-    img.src = item.icon || 'assets/desktop/folder-generic.png';
+    img.src = item.icon || ASSETS.folderIcon;
     img.alt = item.name;
-    img.onerror = () => {
-      // Fallback: emoji según tipo
-      img.style.display = 'none';
+    img.draggable = false;
+    img.onerror = function() {
+      this.style.display = 'none';
       const fallback = document.createElement('div');
-      fallback.style.cssText = 'width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:2rem;';
-      fallback.textContent = item.type === 'folder' ? '📁' : '📄';
-      iconEl.insertBefore(fallback, iconEl.querySelector('.desktop-icon-label'));
+      fallback.style.cssText = 'width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;';
+      fallback.textContent = item.type === 'folder' ? '📁' : item.type === 'app' ? '⚡' : '📄';
+      this.parentNode.insertBefore(fallback, this.nextSibling);
     };
 
     const label = document.createElement('div');
     label.className = 'desktop-icon-label';
     label.textContent = item.name;
 
-    iconEl.appendChild(img);
-    iconEl.appendChild(label);
+    el.appendChild(img);
+    el.appendChild(label);
 
-    // Eventos
-    iconEl.addEventListener('click', (e) => {
+    el.addEventListener('click', (e) => {
       e.stopPropagation();
       selectIcon(item.id);
     });
 
-    iconEl.addEventListener('dblclick', (e) => {
+    el.addEventListener('dblclick', (e) => {
       e.stopPropagation();
-      openItem(item);
+      if (item.clickable) openItem(item);
     });
 
-    container.appendChild(iconEl);
+    container.appendChild(el);
   });
 }
 
-// ============================================================
-// SELECCIONAR ICONO
-// ============================================================
 function selectIcon(id) {
   document.querySelectorAll('.desktop-icon').forEach(el => {
     el.classList.toggle('selected', el.dataset.id === id);
@@ -392,20 +359,273 @@ function selectIcon(id) {
   desktopState.selectedIcon = id;
 }
 
+function deselectAllIcons() {
+  document.querySelectorAll('.desktop-icon').forEach(el => el.classList.remove('selected'));
+  desktopState.selectedIcon = null;
+}
+
 // ============================================================
-// ABRIR ITEM (carpeta o documento)
+// BARRA DE TAREAS — 5 ICONOS FIJOS CON VISTA PREVIA
+// ============================================================
+function renderTaskbar() {
+  const startBtn = document.getElementById('start-btn');
+  if (startBtn) {
+    startBtn.innerHTML = `<img src="${ASSETS.startIcon}" alt="Inicio" onerror="this.style.display='none';this.parentNode.textContent='🪟'">`;
+  }
+  updateTaskbar();
+}
+
+function updateTaskbar() {
+  const center = document.getElementById('taskbar-center');
+  if (!center) return;
+  center.innerHTML = '';
+
+  TASKBAR_APP_GROUPS.forEach(app => {
+    const wins = desktopState.openWindows.filter(app.match);
+    const hasOpen = wins.length > 0;
+
+    // Si es dinámico y no hay ventanas, no mostrar
+    if (app.dynamic && !hasOpen) return;
+
+    const btn = document.createElement('div');
+    btn.className = 'taskbar-app-icon' + (hasOpen ? ' active' : '');
+    btn.dataset.app = app.id;
+    btn.title = app.name;
+    btn.innerHTML = `<img src="${app.icon}" alt="${app.name}" onerror="this.style.display='none';this.parentNode.textContent='📁'">`;
+
+    // ===== VISTA PREVIA =====
+    const preview = document.createElement('div');
+    preview.className = 'taskbar-app-preview';
+    preview.id = `preview-${app.id}`;
+
+    if (wins.length > 0) {
+      let previewHTML = `<div class="taskbar-app-preview-title">${wins.length} ventana${wins.length > 1 ? 's' : ''}</div>`;
+      previewHTML += '<div style="display:flex;flex-direction:column;gap:4px;">';
+
+      wins.forEach(w => {
+        const name = w.data?.name || w.title || 'Ventana';
+        const winEl = document.getElementById(w.id);
+        const isVisible = winEl && winEl.style.display !== 'none';
+
+        previewHTML += `
+          <div class="taskbar-preview-item" data-winid="${w.id}" style="
+            padding: 6px;
+            background: ${isVisible ? 'rgba(0,120,212,0.15)' : 'rgba(255,255,255,0.05)'};
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid ${isVisible ? 'rgba(0,120,212,0.3)' : 'transparent'};
+          ">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="
+                width: 40px;
+                height: 30px;
+                background: ${w.type === 'document' ? '#f5f5f5' : '#1e1e1e'};
+                border-radius: 3px;
+                border: 1px solid rgba(255,255,255,0.1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.6rem;
+                color: ${w.type === 'document' ? '#333' : '#fff'};
+                flex-shrink: 0;
+              ">${w.type === 'document' ? '📄' : '📁'}</div>
+              <div style="
+                font-size: 0.65rem;
+                color: #fff;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-family: 'Segoe UI', sans-serif;
+              ">${name}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      previewHTML += '</div>';
+      preview.innerHTML = previewHTML;
+
+      // Click en miniatura
+      preview.querySelectorAll('.taskbar-preview-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          bringWindowToFront(item.dataset.winid);
+          hideAllPreviews();
+        });
+      });
+    } else {
+      preview.innerHTML = `<div class="taskbar-app-preview-title">${app.name}</div><div style="padding:8px;color:rgba(255,255,255,0.4);font-size:0.6rem;text-align:center;">Sin ventanas abiertas</div>`;
+    }
+
+    btn.appendChild(preview);
+
+    // ===== EVENTOS DE HOVER CON RETRASO =====
+    let hoverTimer = null;
+    let isHoveringPreview = false;
+
+    btn.addEventListener('mouseenter', () => {
+      // Mostrar preview inmediatamente si hay 2+ ventanas
+      if (wins.length >= 2) {
+        showPreview(preview);
+      }
+    });
+
+    btn.addEventListener('mouseleave', () => {
+      // Si no hay hover en la preview, cerrar en 2 segundos
+      hoverTimer = setTimeout(() => {
+        if (!isHoveringPreview) {
+          hidePreview(preview);
+        }
+      }, 2000);
+    });
+
+    preview.addEventListener('mouseenter', () => {
+      isHoveringPreview = true;
+      if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+    });
+
+    preview.addEventListener('mouseleave', () => {
+      isHoveringPreview = false;
+      hidePreview(preview);
+    });
+
+    // ===== CLICK EN EL ICONO =====
+    btn.addEventListener('click', () => {
+      // Apps alwaysShow no hacen nada al click
+      if (app.alwaysShow) return;
+
+      hideAllPreviews();
+
+      if (wins.length === 0) {
+        // Abrir nueva ventana
+        if (app.id === 'browser') openAppById('browser');
+        else if (app.id === 'terminal') openAppById('terminal');
+        else if (app.id === 'explorer') openAppById('documentos');
+        else if (app.id === 'avances') openAppById('adv1');
+        else if (app.id === 'autores') openAppById('aut1');
+      } else if (wins.length === 1) {
+        // Toggle minimize/show
+        toggleWindowVisibility(wins[0].id);
+      } else {
+        // 2+ ventanas: mostrar vista previa
+        showPreview(preview);
+      }
+    });
+
+    center.appendChild(btn);
+  });
+}
+
+function showPreview(previewEl) {
+  // Ocultar todas las demás previews primero
+  document.querySelectorAll('.taskbar-app-preview').forEach(p => {
+    if (p !== previewEl) hidePreview(p);
+  });
+  previewEl.style.opacity = '1';
+  previewEl.style.pointerEvents = 'auto';
+  previewEl.style.transform = 'translateX(-50%) scale(1)';
+}
+
+function hidePreview(previewEl) {
+  previewEl.style.opacity = '0';
+  previewEl.style.pointerEvents = 'none';
+  previewEl.style.transform = 'translateX(-50%) scale(0.95)';
+}
+
+function hideAllPreviews() {
+  document.querySelectorAll('.taskbar-app-preview').forEach(p => hidePreview(p));
+}
+
+function bringWindowToFront(winId) {
+  const win = document.getElementById(winId);
+  if (!win) return;
+  win.style.display = 'flex';
+  win.style.zIndex = ++desktopState.windowZIndex;
+  updateTaskbar();
+}
+
+function toggleWindowVisibility(winId) {
+  const win = document.getElementById(winId);
+  if (!win) return;
+  if (win.style.display === 'none') {
+    win.style.display = 'flex';
+    win.style.zIndex = ++desktopState.windowZIndex;
+  } else {
+    win.style.display = 'none';
+  }
+  updateTaskbar();
+}
+
+// ============================================================
+// MENÚ INICIO
+// ============================================================
+function toggleStartMenu() {
+  const menu = document.getElementById('start-menu');
+  const btn = document.getElementById('start-btn');
+  if (!menu) return;
+
+  desktopState.startMenuOpen = !desktopState.startMenuOpen;
+  menu.classList.toggle('open', desktopState.startMenuOpen);
+  btn?.classList.toggle('active', desktopState.startMenuOpen);
+
+  if (desktopState.startMenuOpen) renderStartMenu();
+}
+
+function renderStartMenu() {
+  const pinnedGrid = document.getElementById('start-pinned-grid');
+  const recGrid = document.getElementById('start-recommended-grid');
+  if (!pinnedGrid || !recGrid) return;
+
+  pinnedGrid.innerHTML = '';
+  recGrid.innerHTML = '';
+
+  const startItems = FILE_SYSTEM.children.filter(item => item.onStart);
+  startItems.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'start-app-item';
+    el.innerHTML = `
+      <img src="${item.icon}" alt="${item.name}" onerror="this.style.display='none';this.parentNode.querySelector('span').style.fontSize='1.5rem';this.parentNode.querySelector('span').textContent='${item.type==='folder'?'📁':'⚡'}';">
+      <span>${item.name}</span>
+    `;
+    el.addEventListener('click', () => { openItem(item); toggleStartMenu(); });
+    pinnedGrid.appendChild(el);
+  });
+
+  const desktopApps = FILE_SYSTEM.children.filter(item => item.onDesktop && !item.onStart).slice(0, 4);
+  desktopApps.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'start-rec-item';
+    el.innerHTML = `<img src="${item.icon}" alt="" onerror="this.style.display='none'"><span>${item.name}</span>`;
+    el.addEventListener('click', () => { openItem(item); toggleStartMenu(); });
+    recGrid.appendChild(el);
+  });
+}
+
+// ============================================================
+// ABRIR ITEMS
 // ============================================================
 function openItem(item) {
+  if (item.type === 'document') {
+    const existingWin = desktopState.openWindows.find(w => w.data?.id === item.id);
+    if (existingWin) {
+      bringWindowToFront(existingWin.id);
+      return;
+    }
+  }
+
   if (item.type === 'folder') {
     openFolderWindow(item);
   } else if (item.type === 'document') {
     openDocumentWindow(item);
+  } else if (item.type === 'app') {
+    openAppWindow(item);
   }
-  playSfx('click');
+  if (typeof playSfx === 'function') playSfx('click');
 }
 
 // ============================================================
-// ABRIR VENTANA DE CARPETA
+// VENTANA DE CARPETA
 // ============================================================
 function openFolderWindow(folder) {
   const winId = `win-${++windowCounter}`;
@@ -413,180 +633,12 @@ function openFolderWindow(folder) {
   const windowEl = document.createElement('div');
   windowEl.className = 'desktop-window';
   windowEl.id = winId;
-  windowEl.style.cssText = `
-    width: 500px;
-    height: 350px;
-    top: ${50 + (desktopState.openWindows.length * 30)}px;
-    left: ${50 + (desktopState.openWindows.length * 30)}px;
-    z-index: ${++desktopState.windowZIndex};
-  `;
+  windowEl.style.cssText = `width:650px;height:420px;top:${40 + (desktopState.openWindows.length * 25)}px;left:${40 + (desktopState.openWindows.length * 25)}px;z-index:${++desktopState.windowZIndex};`;
 
+  const headerIcon = (folder.id === 'documentos') ? ASSETS.folderDocs : ASSETS.folderIcon;
   windowEl.innerHTML = `
     <div class="window-header" onmousedown="startDrag(event, '${winId}')">
-      <div class="window-title">
-        <span>📁</span> ${folder.name}
-      </div>
-      <div class="window-controls">
-        <button class="window-btn minimize" onclick="minimizeWindow('${winId}')">−</button>
-        <button class="window-btn maximize" onclick="maximizeWindow('${winId}')">□</button>
-        <button class="window-btn close" onclick="closeWindow('${winId}')">×</button>
-      </div>
-    </div>
-    <div class="window-content">
-      <div class="folder-view" id="folder-view-${winId}"></div>
-    </div>
-  `;
-
-  document.getElementById('desktop-windows').appendChild(windowEl);
-  desktopState.openWindows.push({ id: winId, type: 'folder', data: folder });
-
-  // Renderizar contenido de la carpeta
-  const folderView = document.getElementById(`folder-view-${winId}`);
-  folder.children.forEach(child => {
-    const itemEl = document.createElement('div');
-    itemEl.className = 'folder-item';
-    itemEl.innerHTML = `
-      <img class="folder-item-icon" src="${child.icon || 'assets/desktop/file-generic.png'}" 
-           alt="${child.name}" 
-           onerror="this.style.display='none';this.nextElementSibling.style.fontSize='2rem';this.nextElementSibling.textContent='${child.type === 'folder' ? '📁' : '📄'}';">
-      <div class="folder-item-name">${child.name}</div>
-    `;
-    itemEl.addEventListener('dblclick', () => openItem(child));
-    folderView.appendChild(itemEl);
-  });
-
-  // Traer al frente al hacer click
-  windowEl.addEventListener('mousedown', () => {
-    windowEl.style.zIndex = ++desktopState.windowZIndex;
-  });
-
-  updateTaskbar();
-  playSfx('notify');
-}
-
-// ============================================================
-// ABRIR VENTANA DE DOCUMENTO (estilo Word)
-// ============================================================
-function openDocumentWindow(doc) {
-  const winId = `win-${++windowCounter}`;
-
-  const windowEl = document.createElement('div');
-  windowEl.className = 'desktop-window';
-  windowEl.id = winId;
-  windowEl.style.cssText = `
-    width: 600px;
-    height: 450px;
-    top: ${40 + (desktopState.openWindows.length * 25)}px;
-    left: ${40 + (desktopState.openWindows.length * 25)}px;
-    z-index: ${++desktopState.windowZIndex};
-  `;
-
-  windowEl.innerHTML = `
-    <div class="window-header" onmousedown="startDrag(event, '${winId}')">
-      <div class="window-title">
-        <span>📝</span> ${doc.name}
-      </div>
-      <div class="window-controls">
-        <button class="window-btn minimize" onclick="minimizeWindow('${winId}')">−</button>
-        <button class="window-btn maximize" onclick="maximizeWindow('${winId}')">□</button>
-        <button class="window-btn close" onclick="closeWindow('${winId}')">×</button>
-      </div>
-    </div>
-    <div class="window-content" style="padding:0;">
-      <div class="document-view">
-        ${doc.content.body}
-      </div>
-    </div>
-  `;
-
-  document.getElementById('desktop-windows').appendChild(windowEl);
-  desktopState.openWindows.push({ id: winId, type: 'document', data: doc });
-
-  // Traer al frente al hacer click
-  windowEl.addEventListener('mousedown', () => {
-    windowEl.style.zIndex = ++desktopState.windowZIndex;
-  });
-
-  updateTaskbar();
-  playSfx('notify');
-}
-
-// ============================================================
-// ABRIR APP ESPECIAL (navegador, terminal)
-// ============================================================
-function openApp(appName) {
-  const winId = `win-${++windowCounter}`;
-
-  const windowEl = document.createElement('div');
-  windowEl.className = 'desktop-window';
-  windowEl.id = winId;
-  windowEl.style.cssText = `
-    width: 550px;
-    height: 380px;
-    top: ${60 + (desktopState.openWindows.length * 30)}px;
-    left: ${60 + (desktopState.openWindows.length * 30)}px;
-    z-index: ${++desktopState.windowZIndex};
-  `;
-
-  let content = '';
-  let title = '';
-  let icon = '';
-
-  switch(appName) {
-    case 'navegador':
-      title = 'Navegador Web';
-      icon = '🌐';
-      content = `
-        <div style="padding:1rem;background:#0a0a12;height:100%;">
-          <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
-            <input type="text" placeholder="https://..." 
-              style="flex:1;padding:0.4rem;background:rgba(255,255,255,0.05);border:1px solid rgba(0,245,255,0.2);border-radius:4px;color:#e0e8f0;font-family:var(--fm);font-size:0.6rem;">
-            <button style="padding:0.4rem 0.8rem;background:var(--accent);border:none;border-radius:4px;color:#000;font-family:var(--fp);font-size:0.3rem;cursor:pointer;">Ir</button>
-          </div>
-          <div style="color:var(--mid);font-family:var(--ft);font-size:0.9rem;text-align:center;padding-top:3rem;">
-            <p>🌐 Navegador ChronOS</p>
-            <p style="margin-top:1rem;font-size:0.8rem;">Ingresa una URL para navegar</p>
-          </div>
-        </div>
-      `;
-      break;
-
-    case 'terminal':
-      title = 'Terminal';
-      icon = '💻';
-      content = `
-        <div class="terminal-view" id="terminal-${winId}">
-          <div class="terminal-line"><span class="terminal-prompt">user@chronos-sigloxxi:~$</span> welcome</div>
-          <div class="terminal-line">🌐 Bienvenido a ChronOS Terminal — Siglo XXI</div>
-          <div class="terminal-line">Comandos disponibles: help, clear, date, echo, ls</div>
-          <div class="terminal-line">&nbsp;</div>
-          <div class="terminal-line" id="terminal-input-line-${winId}">
-            <span class="terminal-prompt">user@chronos-sigloxxi:~$</span>
-            <input type="text" class="terminal-input" id="terminal-input-${winId}" 
-              onkeydown="handleTerminalKey(event, '${winId}')" autofocus>
-          </div>
-        </div>
-      `;
-      break;
-
-    case 'documentos':
-      // Abrir la carpeta Documentos
-      const docsFolder = FILE_SYSTEM.children.find(c => c.id === 'docs');
-      if (docsFolder) {
-        openFolderWindow(docsFolder);
-        toggleStartMenu();
-        return;
-      }
-      break;
-  }
-
-  if (!content) return;
-
-  windowEl.innerHTML = `
-    <div class="window-header" onmousedown="startDrag(event, '${winId}')">
-      <div class="window-title">
-        <span>${icon}</span> ${title}
-      </div>
+      <div class="window-title"><img src="${headerIcon}" alt=""> ${folder.name}</div>
       <div class="window-controls">
         <button class="window-btn minimize" onclick="minimizeWindow('${winId}')">−</button>
         <button class="window-btn maximize" onclick="maximizeWindow('${winId}')">□</button>
@@ -594,87 +646,216 @@ function openApp(appName) {
       </div>
     </div>
     <div class="window-content" style="padding:0;overflow:hidden;">
-      ${content}
+      <div class="explorer-body">
+        <div class="explorer-sidebar">
+          <div class="explorer-sidebar-section">
+            <div class="explorer-sidebar-header">Principal</div>
+            <div class="explorer-sidebar-item ${folder.id === 'root' || folder.isDesktop ? 'active' : ''}" onclick="navigateToFolder('${winId}', 'root')"><span>🖥️</span> PC</div>
+            <div class="explorer-sidebar-item ${folder.id === 'documentos' ? 'active' : ''}" onclick="navigateToFolder('${winId}', 'documentos')"><span>📁</span> Documentos</div>
+          </div>
+          <div class="explorer-sidebar-section">
+            <div class="explorer-sidebar-header">Apps</div>
+            <div class="explorer-sidebar-item" onclick="openAppById('browser')"><span>🌐</span> Web</div>
+            <div class="explorer-sidebar-item" onclick="openAppById('terminal')"><span>💻</span> Terminal</div>
+          </div>
+        </div>
+        <div class="explorer-main">
+          <div class="explorer-pathbar" id="pathbar-${winId}">PC › ${folder.name}</div>
+          <div class="explorer-grid" id="folder-view-${winId}"></div>
+        </div>
+      </div>
     </div>
   `;
 
   document.getElementById('desktop-windows').appendChild(windowEl);
-  desktopState.openWindows.push({ id: winId, type: 'app', app: appName });
+  desktopState.openWindows.push({ id: winId, type: 'folder', data: folder, folderId: folder.id });
+
+  renderFolderContents(winId, folder);
 
   windowEl.addEventListener('mousedown', () => {
     windowEl.style.zIndex = ++desktopState.windowZIndex;
   });
 
   updateTaskbar();
-  toggleStartMenu();
-  playSfx('notify');
+  if (typeof playSfx === 'function') playSfx('notify');
+}
 
-  // Enfocar input de terminal si es terminal
-  if (appName === 'terminal') {
-    setTimeout(() => {
-      const input = document.getElementById(`terminal-input-${winId}`);
-      if (input) input.focus();
-    }, 100);
+function renderFolderContents(winId, folder) {
+  const view = document.getElementById(`folder-view-${winId}`);
+  if (!view) return;
+  view.innerHTML = '';
+
+  if (!folder.children || folder.children.length === 0) {
+    view.innerHTML = '<div style="color:rgba(255,255,255,0.3);text-align:center;padding:3rem;font-family:Segoe UI;font-size:0.8rem;">Esta carpeta está vacía</div>';
+    return;
   }
+
+  folder.children.forEach(child => {
+    const el = document.createElement('div');
+    el.className = 'explorer-item';
+    el.style.cursor = child.clickable ? 'pointer' : 'default';
+    el.innerHTML = `
+      <img src="${child.icon || ASSETS.folderIcon}" alt="${child.name}" onerror="this.style.display='none';">
+      <div class="explorer-item-name">${child.name}</div>
+    `;
+
+    if (child.clickable) {
+      el.addEventListener('dblclick', () => openItem(child));
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.explorer-item').forEach(i => i.classList.remove('selected'));
+        el.classList.add('selected');
+      });
+    }
+
+    view.appendChild(el);
+  });
+}
+
+function navigateToFolder(winId, folderId) {
+  const folder = findItemById(FILE_SYSTEM, folderId);
+  if (!folder) return;
+  const win = document.getElementById(winId);
+  if (!win) return;
+
+  const navIcon = (folder.id === 'documentos') ? ASSETS.folderDocs : ASSETS.folderIcon;
+  const titleEl = win.querySelector('.window-title');
+  if (titleEl) titleEl.innerHTML = `<img src="${navIcon}" alt=""> ${folder.name}`;
+
+  const pathbar = document.getElementById(`pathbar-${winId}`);
+  if (pathbar) pathbar.innerHTML = `PC › ${folder.name}`;
+
+  win.querySelectorAll('.explorer-sidebar-item').forEach(item => {
+    item.classList.remove('active');
+    if (folderId === 'root' && item.textContent.includes('PC')) item.classList.add('active');
+    if (folderId === 'documentos' && item.textContent.includes('Documentos')) item.classList.add('active');
+  });
+
+  renderFolderContents(winId, folder);
+
+  const winState = desktopState.openWindows.find(w => w.id === winId);
+  if (winState) winState.folderId = folderId;
 }
 
 // ============================================================
-// TERMINAL — Manejar comandos
+// DOCUMENTO Y APP WINDOWS
+// ============================================================
+function openDocumentWindow(doc) {
+  const winId = `win-${++windowCounter}`;
+  const windowEl = createBaseWindow(winId, doc.name, doc.icon || ASSETS.docAdvances, 700, 500);
+
+  windowEl.querySelector('.window-content').innerHTML = `
+    <div class="document-view">${doc.content?.body || '<h1>Documento</h1><p>Sin contenido...</p>'}</div>
+  `;
+
+  document.getElementById('desktop-windows').appendChild(windowEl);
+  desktopState.openWindows.push({
+    id: winId,
+    type: 'document',
+    data: doc,
+    title: doc.name,
+    appGroup: doc.appGroup || null
+  });
+  setupWindowEvents(windowEl, winId);
+  updateTaskbar();
+  if (typeof playSfx === 'function') playSfx('notify');
+}
+
+function openAppWindow(app) {
+  const winId = `win-${++windowCounter}`;
+
+  if (app.appType === 'terminal') {
+    const windowEl = createBaseWindow(winId, 'Terminal', ASSETS.terminalIcon, 580, 400);
+    windowEl.querySelector('.window-content').innerHTML = `
+      <div class="terminal-view" id="terminal-${winId}">
+        <div class="terminal-line"><span class="terminal-prompt">user@chronos-sigloxxi:~$</span> welcome</div>
+        <div class="terminal-line">🌐 Bienvenido a ChronOS Terminal — Siglo XXI</div>
+        <div class="terminal-line">Comandos: help, clear, date, echo, ls, whoami, uname, cd, pwd</div>
+        <div class="terminal-line">&nbsp;</div>
+        <div class="terminal-input-line" id="terminal-input-line-${winId}">
+          <span class="terminal-prompt">user@chronos-sigloxxi:~$</span>
+          <input type="text" class="terminal-input" id="terminal-input-${winId}" onkeydown="handleTerminalKey(event, '${winId}')" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+    `;
+    document.getElementById('desktop-windows').appendChild(windowEl);
+    desktopState.openWindows.push({ id: winId, type: 'app', app: 'terminal', data: app, title: 'Terminal' });
+    setupWindowEvents(windowEl, winId);
+    setTimeout(() => { const input = document.getElementById(`terminal-input-${winId}`); if (input) input.focus(); }, 100);
+  } else if (app.appType === 'browser') {
+    const windowEl = createBaseWindow(winId, 'Explorador Web', ASSETS.browserIcon, 700, 480);
+    windowEl.querySelector('.window-content').innerHTML = `
+      <div class="browser-view">
+        <div class="browser-toolbar">
+          <div class="browser-nav-btns">
+            <button class="browser-nav-btn">◀</button>
+            <button class="browser-nav-btn">▶</button>
+            <button class="browser-nav-btn">↻</button>
+          </div>
+          <div class="browser-addressbar"><span class="lock-icon">🔒</span><span>chronos-sigloxxi.local</span></div>
+        </div>
+        <div class="browser-content">
+          <div class="browser-logo">🌐</div>
+          <p>ChronOS Browser</p>
+          <p class="browser-hint">Navegador integrado del Siglo XXI</p>
+        </div>
+      </div>
+    `;
+    document.getElementById('desktop-windows').appendChild(windowEl);
+    desktopState.openWindows.push({ id: winId, type: 'app', app: 'browser', data: app, title: 'Explorador Web' });
+    setupWindowEvents(windowEl, winId);
+  }
+
+  updateTaskbar();
+  if (typeof playSfx === 'function') playSfx('notify');
+}
+
+function createBaseWindow(winId, title, icon, width, height) {
+  const el = document.createElement('div');
+  el.className = 'desktop-window';
+  el.id = winId;
+  el.style.cssText = `width:${width}px;height:${height}px;top:${40 + (desktopState.openWindows.length * 25)}px;left:${40 + (desktopState.openWindows.length * 25)}px;z-index:${++desktopState.windowZIndex};`;
+  el.innerHTML = `
+    <div class="window-header" onmousedown="startDrag(event, '${winId}')">
+      <div class="window-title"><img src="${icon}" alt="" onerror="this.style.display='none'"> ${title}</div>
+      <div class="window-controls">
+        <button class="window-btn minimize" onclick="minimizeWindow('${winId}')">−</button>
+        <button class="window-btn maximize" onclick="maximizeWindow('${winId}')">□</button>
+        <button class="window-btn close" onclick="closeWindow('${winId}')">×</button>
+      </div>
+    </div>
+    <div class="window-content" style="padding:0;overflow:auto;"></div>
+  `;
+  return el;
+}
+
+function setupWindowEvents(el, winId) {
+  el.addEventListener('mousedown', () => { el.style.zIndex = ++desktopState.windowZIndex; });
+}
+
+function openAppById(id) {
+  const item = findItemById(FILE_SYSTEM, id);
+  if (item) openItem(item);
+}
+
+// ============================================================
+// TERMINAL
 // ============================================================
 function handleTerminalKey(e, winId) {
-  if (e.key === 'Enter') {
-    const input = document.getElementById(`terminal-input-${winId}`);
-    const command = input.value.trim();
-    const terminal = document.getElementById(`terminal-${winId}`);
-    const inputLine = document.getElementById(`terminal-input-line-${winId}`);
+  if (e.key !== 'Enter') return;
+  const input = document.getElementById(`terminal-input-${winId}`);
+  const command = input.value.trim();
+  const terminal = document.getElementById(`terminal-${winId}`);
+  const inputLine = document.getElementById(`terminal-input-line-${winId}`);
 
-    // Mostrar comando ejecutado
-    const cmdLine = document.createElement('div');
-    cmdLine.className = 'terminal-line';
-    cmdLine.innerHTML = `<span class="terminal-prompt">user@chronos-sigloxxi:~$</span> ${esc(command)}`;
-    terminal.insertBefore(cmdLine, inputLine);
+  const cmdLine = document.createElement('div');
+  cmdLine.className = 'terminal-line';
+  cmdLine.innerHTML = `<span class="terminal-prompt">user@chronos-sigloxxi:~$</span> ${escHtml(command)}`;
+  terminal.insertBefore(cmdLine, inputLine);
 
-    // Procesar comando
-    let output = '';
-    switch(command.toLowerCase()) {
-      case 'help':
-        output = `Comandos disponibles:
-  help    — Muestra esta ayuda
-  clear   — Limpia la terminal
-  date    — Muestra la fecha actual
-  echo    — Repite el texto
-  ls      — Lista archivos
-  whoami  — Muestra usuario actual
-  uname   — Información del sistema`;
-        break;
-      case 'clear':
-        // Limpiar todo excepto la línea de input
-        const lines = terminal.querySelectorAll('.terminal-line');
-        lines.forEach(line => {
-          if (line.id !== `terminal-input-line-${winId}`) line.remove();
-        });
-        input.value = '';
-        return;
-      case 'date':
-        output = new Date().toLocaleString('es-CO');
-        break;
-      case 'ls':
-        output = 'Documentos/  Historia_Web/  Computacion_Cuantica/  Metodologias_Agiles/  Papelera/';
-        break;
-      case 'whoami':
-        output = 'user (explorador del Siglo XXI)';
-        break;
-      case 'uname':
-        output = 'ChronOS 21.0 — Kernel del futuro 🚀';
-        break;
-      default:
-        if (command.startsWith('echo ')) {
-          output = command.slice(5);
-        } else if (command) {
-          output = `Comando no encontrado: ${command}. Escribe 'help' para ver los disponibles.`;
-        }
-    }
-
+  if (command.toLowerCase() === 'clear') {
+    terminal.querySelectorAll('.terminal-line').forEach(l => { if (l.id !== `terminal-input-line-${winId}`) l.remove(); });
+  } else {
+    const output = getTerminalOutput(command);
     if (output) {
       output.split('\n').forEach(line => {
         const outLine = document.createElement('div');
@@ -683,13 +864,39 @@ function handleTerminalKey(e, winId) {
         terminal.insertBefore(outLine, inputLine);
       });
     }
-
-    input.value = '';
-    terminal.scrollTop = terminal.scrollHeight;
   }
+
+  input.value = '';
+  setTimeout(() => terminal.scrollTop = terminal.scrollHeight, 10);
 }
 
-function esc(s) {
+function getTerminalOutput(command) {
+  const cmd = command.toLowerCase();
+  const cmds = {
+    'help': `Comandos disponibles:
+  help     Muestra esta ayuda
+  clear    Limpia la terminal
+  date     Fecha y hora actual
+  echo     Repite el texto
+  ls       Lista archivos
+  whoami   Usuario actual
+  uname    Info del sistema
+  pwd      Directorio actual
+  cd       Cambiar directorio`,
+    'date': new Date().toLocaleString('es-CO'),
+    'ls': 'Documentos/  Avances_e_Inventos/  Autores/  Papelera/',
+    'whoami': 'user (explorador del Siglo XXI)',
+    'uname': 'ChronOS 21.0 — Kernel del futuro 🚀',
+    'pwd': '/home/user/escritorio'
+  };
+  if (cmds[cmd]) return cmds[cmd];
+  if (cmd.startsWith('echo ')) return command.slice(5);
+  if (cmd.startsWith('cd ')) return `Cambiando a: ${command.slice(3)}`;
+  if (cmd) return `Comando no encontrado: ${command}. Escribe 'help' para ver los disponibles.`;
+  return '';
+}
+
+function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
@@ -706,63 +913,47 @@ function closeWindow(winId) {
       updateTaskbar();
     }, 150);
   }
-  playSfx('click');
 }
 
 function minimizeWindow(winId) {
   const win = document.getElementById(winId);
-  if (win) {
-    win.style.display = 'none';
-    updateTaskbar();
-  }
-  playSfx('click');
+  if (win) { win.style.display = 'none'; updateTaskbar(); }
 }
 
 function maximizeWindow(winId) {
   const win = document.getElementById(winId);
   if (!win) return;
-
   if (win.dataset.maximized === 'true') {
-    // Restaurar
     win.style.width = win.dataset.prevWidth;
     win.style.height = win.dataset.prevHeight;
     win.style.top = win.dataset.prevTop;
     win.style.left = win.dataset.prevLeft;
+    win.style.borderRadius = '8px';
     win.dataset.maximized = 'false';
   } else {
-    // Maximizar
     win.dataset.prevWidth = win.style.width;
     win.dataset.prevHeight = win.style.height;
     win.dataset.prevTop = win.style.top;
     win.dataset.prevLeft = win.style.left;
     win.style.width = '100%';
-    win.style.height = 'calc(100% - 34px)';
+    win.style.height = 'calc(100%)';
     win.style.top = '0';
     win.style.left = '0';
+    win.style.borderRadius = '0';
     win.dataset.maximized = 'true';
   }
-  playSfx('click');
 }
 
 // ============================================================
-// ARRASTRAR VENTANAS
+// ARRASTRAR
 // ============================================================
 let dragState = { active: false, winId: null, offsetX: 0, offsetY: 0 };
 
 function startDrag(e, winId) {
   const win = document.getElementById(winId);
   if (win.dataset.maximized === 'true') return;
-
-  dragState = {
-    active: true,
-    winId: winId,
-    offsetX: e.clientX - win.offsetLeft,
-    offsetY: e.clientY - win.offsetTop
-  };
-
-  // Traer al frente
+  dragState = { active: true, winId, offsetX: e.clientX - win.offsetLeft, offsetY: e.clientY - win.offsetTop };
   win.style.zIndex = ++desktopState.windowZIndex;
-
   document.addEventListener('mousemove', onDrag);
   document.addEventListener('mouseup', stopDrag);
 }
@@ -771,7 +962,6 @@ function onDrag(e) {
   if (!dragState.active) return;
   const win = document.getElementById(dragState.winId);
   if (!win) return;
-
   win.style.left = (e.clientX - dragState.offsetX) + 'px';
   win.style.top = (e.clientY - dragState.offsetY) + 'px';
 }
@@ -783,92 +973,22 @@ function stopDrag() {
 }
 
 // ============================================================
-// BARRA DE TAREAS
+// UTILIDADES
 // ============================================================
-function updateTaskbar() {
-  const container = document.getElementById('taskbar-apps');
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  desktopState.openWindows.forEach(win => {
-    const btn = document.createElement('div');
-    btn.className = 'taskbar-app';
-
-    let icon = '📁';
-    let name = 'Ventana';
-
-    if (win.type === 'folder') {
-      icon = '📁';
-      name = win.data.name;
-    } else if (win.type === 'document') {
-      icon = '📝';
-      name = win.data.name.substring(0, 15) + '...';
-    } else if (win.type === 'app') {
-      switch(win.app) {
-        case 'navegador': icon = '🌐'; name = 'Navegador'; break;
-        case 'terminal': icon = '💻'; name = 'Terminal'; break;
-      }
+function findItemById(root, id) {
+  if (root.id === id) return root;
+  if (root.children) {
+    for (const child of root.children) {
+      const found = findItemById(child, id);
+      if (found) return found;
     }
-
-    btn.innerHTML = `<span>${icon}</span> <span>${name}</span>`;
-
-    const winEl = document.getElementById(win.id);
-    if (winEl && winEl.style.display !== 'none') {
-      btn.classList.add('active');
-    }
-
-    btn.addEventListener('click', () => {
-      const w = document.getElementById(win.id);
-      if (w) {
-        if (w.style.display === 'none') {
-          w.style.display = 'flex';
-          w.style.zIndex = ++desktopState.windowZIndex;
-        } else {
-          w.style.zIndex = ++desktopState.windowZIndex;
-        }
-        updateTaskbar();
-      }
-    });
-
-    container.appendChild(btn);
-  });
-}
-
-// ============================================================
-// MENÚ INICIO
-// ============================================================
-function toggleStartMenu() {
-  const menu = document.getElementById('start-menu');
-  if (!menu) return;
-
-  desktopState.startMenuOpen = !desktopState.startMenuOpen;
-  menu.style.display = desktopState.startMenuOpen ? 'block' : 'none';
-  playSfx('click');
-}
-
-// ============================================================
-// CLICK EN ÁREA DE TRABAJO (deseleccionar)
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  const workspace = document.getElementById('desktop-workspace');
-  if (workspace) {
-    workspace.addEventListener('click', (e) => {
-      if (e.target === workspace || e.target.id === 'desktop-icons') {
-        document.querySelectorAll('.desktop-icon').forEach(el => el.classList.remove('selected'));
-        desktopState.selectedIcon = null;
-      }
-    });
   }
-});
+  return null;
+}
 
 // ============================================================
-// KEYBOARD SHORTCUTS
+// KEYBOARD
 // ============================================================
 document.addEventListener('keydown', (e) => {
-  // Win/Super key para menú inicio
-  if (e.key === 'Meta' || e.key === 'OS') {
-    e.preventDefault();
-    toggleStartMenu();
-  }
+  if (e.key === 'Meta' || e.key === 'OS') { e.preventDefault(); toggleStartMenu(); }
 });

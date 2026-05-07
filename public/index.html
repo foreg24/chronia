@@ -123,15 +123,12 @@
 
     <!-- Contenedor del escritorio PC -->
     <div class="desktop-container" id="desktop-container">
-      <!-- Barra de tareas -->
-      <div class="desktop-taskbar">
-        <div class="taskbar-start" onclick="toggleStartMenu()">🪟 Inicio</div>
-        <div class="taskbar-apps" id="taskbar-apps"></div>
-        <div class="taskbar-clock" id="taskbar-clock">00:00</div>
-      </div>
 
-      <!-- Área de trabajo (fondo de pantalla) -->
+      <!-- Área de trabajo (fondo de pantalla + iconos + ventanas) -->
       <div class="desktop-workspace" id="desktop-workspace">
+        <!-- Fondo de pantalla -->
+        <div class="desktop-wallpaper" id="desktop-wallpaper"></div>
+
         <!-- Iconos del escritorio -->
         <div class="desktop-icons" id="desktop-icons">
           <!-- Se generan dinámicamente desde JS -->
@@ -141,22 +138,66 @@
         <div class="desktop-windows" id="desktop-windows"></div>
       </div>
 
-      <!-- Menú Inicio -->
-      <div class="start-menu" id="start-menu" style="display:none;">
-        <div class="start-header">🌐 ChronOS — Siglo XXI</div>
-        <div class="start-apps">
-          <div class="start-app" onclick="openApp('navegador')">
-            <span class="start-app-icon">🌐</span>
-            <span>Navegador Web</span>
+      <!-- Barra de tareas — Estilo Windows 11 (abajo) -->
+      <div class="desktop-taskbar" id="desktop-taskbar">
+        <!-- Widgets / Inicio (izquierda) -->
+        <div class="taskbar-widgets">
+          <button class="taskbar-widget-btn" id="start-btn" onclick="toggleStartMenu()" title="Inicio">
+            <!-- Icono de inicio se carga desde JS -->
+          </button>
+        </div>
+
+        <!-- Apps centradas -->
+        <div class="taskbar-center" id="taskbar-center">
+          <!-- Apps se cargan desde JS -->
+        </div>
+
+        <!-- Sistema (derecha: hora, wifi, etc.) -->
+        <div class="taskbar-system">
+          <div class="taskbar-sys-icons">
+            <div class="taskbar-sys-icon">📶</div>
+            <div class="taskbar-sys-icon">🔊</div>
           </div>
-          <div class="start-app" onclick="openApp('documentos')">
-            <span class="start-app-icon">📁</span>
-            <span>Documentos</span>
+          <div class="taskbar-clock-area" id="taskbar-clock-area">
+            <div class="taskbar-clock-time" id="taskbar-clock-time">00:00</div>
+            <div class="taskbar-clock-date" id="taskbar-clock-date">1 ene</div>
           </div>
-          <div class="start-app" onclick="openApp('terminal')">
-            <span class="start-app-icon">💻</span>
-            <span>Terminal</span>
+        </div>
+      </div>
+
+      <!-- Menú Inicio — Estilo Windows 11 -->
+      <div class="start-menu" id="start-menu">
+        <!-- Búsqueda -->
+        <div class="start-search">
+          <input type="text" placeholder="Escribe aquí para buscar" readonly>
+        </div>
+
+        <!-- Apps fijadas -->
+        <div class="start-pinned">
+          <div class="start-pinned-header">
+            <span>Fijado</span>
+            <button onclick="toggleStartMenu()">Todas las apps →</button>
           </div>
+          <div class="start-apps-grid" id="start-pinned-grid">
+            <!-- Apps se cargan desde JS -->
+          </div>
+        </div>
+
+        <!-- Recomendados -->
+        <div class="start-recommended">
+          <div class="start-recommended-header">Recomendado</div>
+          <div class="start-recommended-grid" id="start-recommended-grid">
+            <!-- Se carga desde JS -->
+          </div>
+        </div>
+
+        <!-- Usuario -->
+        <div class="start-user">
+          <div class="start-user-info">
+            <div class="start-user-avatar">👤</div>
+            <div class="start-user-name">Usuario</div>
+          </div>
+          <button class="start-power-btn" title="Apagar" onclick="toggleStartMenu()">⏻</button>
         </div>
       </div>
     </div>

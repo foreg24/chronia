@@ -1391,6 +1391,13 @@ function nav(id) {
   } else {
     destroyGame();
   }
+
+  // ← NUEVO: Inicializar escritorio al entrar a Siglo XXI
+  if (id === 'sigloxxi') {
+    setTimeout(() => {
+      if (typeof initDesktop === 'function') initDesktop();
+    }, 100);
+  }
   
   if (id === 'home') {
     // Reset completo al ir a inicio
@@ -1967,8 +1974,4 @@ function afterLoad() {
   initMap();
   initMobileControls();
   bindSfx();
-  // ← NUEVO: Precargar escritorio (se activa al navegar a sigloxxi)
-  if (typeof initDesktop === 'function') {
-    // El escritorio se inicializa lazy al entrar a la sección
-  }
 }
