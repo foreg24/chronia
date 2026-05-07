@@ -219,12 +219,24 @@ const FILE_SYSTEM = {
           icon: ASSETS.folderIcon,
           clickable: true,
           children: [
-            { id: 'aut1', name: 'Autor 1.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 1', body: '<h1>Autor 1</h1><p>Biografía del autor 1...</p>' }, appGroup: 'autores' },
-            { id: 'aut2', name: 'Autor 2.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 2', body: '<h1>Autor 2</h1><p>Biografía del autor 2...</p>' }, appGroup: 'autores' },
-            { id: 'aut3', name: 'Autor 3.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 3', body: '<h1>Autor 3</h1><p>Biografía del autor 3...</p>' }, appGroup: 'autores' },
-            { id: 'aut4', name: 'Autor 4.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 4', body: '<h1>Autor 4</h1><p>Biografía del autor 4...</p>' }, appGroup: 'autores' },
-            { id: 'aut5', name: 'Autor 5.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 5', body: '<h1>Autor 5</h1><p>Biografía del autor 5...</p>' }, appGroup: 'autores' },
-            { id: 'aut6', name: 'Autor 6.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 6', body: '<h1>Autor 6</h1><p>Biografía del autor 6...</p>' }, appGroup: 'autores' },
+            { id: 'aut1', name: 'Elon Musk.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 1', 
+                body: '<h1>Elon Musk</h1><p>Biografía del autor 1...</p>' 
+            }, appGroup: 'autores' },
+            { id: 'aut2', name: 'Jeff Bezos.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 2', 
+                body: '<h1>Jeff Bezos</h1><p>Biografía del autor 2...</p>' 
+            }, appGroup: 'autores' },
+            { id: 'aut3', name: 'Ginni Rometty.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 3', 
+                body: '<h1>Ginni Rometty</h1><p>Biografía del autor 3...</p>' 
+            }, appGroup: 'autores' },
+            { id: 'aut4', name: 'Geoffrey Hinton.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 4', 
+                body: '<h1>Geoffrey Hinton</h1><p>Biografía del autor 4...</p>' 
+            }, appGroup: 'autores' },
+            { id: 'aut5', name: 'Fei-Fei Li.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 5', 
+                body: '<h1>Fei-Fei Li</h1><p>Biografía del autor 5...</p>' 
+            }, appGroup: 'autores' },
+            { id: 'aut6', name: 'Sundar Pichai.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 6', 
+                body: '<h1>Sundar Pichai</h1><p>Biografía del autor 6...</p>' 
+            }, appGroup: 'autores' },
           ]
         }
       ]
