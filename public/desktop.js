@@ -166,6 +166,90 @@ const AVANCES_CONTENT = {
 };
 
 // ============================================================
+// CONTENIDO DE LOS 6 AUTORES/INVENTORES
+// ============================================================
+const AUTORES_CONTENT = {
+  aut1: {
+    title: 'Elon Musk',
+    body: `<h1>Elon Musk</h1>
+    <p>Empresario, inversor e ingeniero sudafricano-estadounidense conocido por liderar empresas como SpaceX y Tesla, con las que ha impulsado avances en la exploración espacial y los vehículos eléctricos, influyendo en el desarrollo tecnológico actual.</p>
+    <h2>Contribuciones Principales</h2>
+    <ul>
+      <li><strong>SpaceX:</strong> Revolucionó la exploración espacial con cohetes reutilizables y el objetivo de colonizar Marte</li>
+      <li><strong>Tesla:</strong> Impulsó la transición hacia los vehículos eléctricos de alto rendimiento</li>
+      <li><strong>Neuralink:</strong> Desarrolla interfaces cerebro-computadora</li>
+      <li><strong>The Boring Company:</strong> Innovación en infraestructura de túneles</li>
+      <li><strong>Starlink:</strong> Red de internet satelital global</li>
+    </ul>`
+  },
+  aut2: {
+    title: 'Jeff Bezos',
+    body: `<h1>Jeff Bezos</h1>
+    <p>Empresario y magnate estadounidense conocido principalmente por ser el fundador de Amazon, una de las empresas más grandes e influyentes del mundo en comercio electrónico y tecnología.</p>
+    <h2>Contribuciones Principales</h2>
+    <ul>
+      <li><strong>Amazon:</strong> Fundó la plataforma de comercio electrónico más grande del mundo</li>
+      <li><strong>Amazon Web Services (AWS):</strong> Pionero en computación en la nube</li>
+      <li><strong>Blue Origin:</strong> Empresa de turismo y exploración espacial</li>
+      <li><strong>Kindle:</strong> Revolucionó la industria editorial con libros electrónicos</li>
+      <li><strong>Logística:</strong> Innovó en distribución y entrega a domicilio</li>
+    </ul>`
+  },
+  aut3: {
+    title: 'Ginni Rometty',
+    body: `<h1>Ginni Rometty</h1>
+    <p>Empresaria estadounidense que lideró IBM como CEO, impulsando su transformación hacia la inteligencia artificial y la computación en la nube durante su mandato.</p>
+    <h2>Contribuciones Principales</h2>
+    <ul>
+      <li><strong>IBM Watson:</strong> Impulsó el desarrollo de IA cognitiva para empresas</li>
+      <li><strong>Transformación Digital:</strong> Lideró la transición de IBM hacia servicios cloud</li>
+      <li><strong>IBM Cloud:</strong> Expansión de servicios de computación en la nube</li>
+      <li><strong>Ciberseguridad:</strong> Fortaleció las capacidades de seguridad empresarial</li>
+      <li><strong>Diversidad:</strong> Promovió la inclusión en el sector tecnológico</li>
+    </ul>`
+  },
+  aut4: {
+    title: 'Geoffrey Hinton',
+    body: `<h1>Geoffrey Hinton</h1>
+    <p>Científico computacional británico-canadiense, pionero en inteligencia artificial y aprendizaje profundo. Desarrolló la Máquina de Boltzmann, un modelo de aprendizaje inspirado en la física que permitió avances en el aprendizaje no supervisado y en la forma de representar el conocimiento en la inteligencia artificial.</p>
+    <h2>Contribuciones Principales</h2>
+    <ul>
+      <li><strong>Máquina de Boltzmann:</strong> Modelo de aprendizaje no supervisado inspirado en la física</li>
+      <li><strong>Backpropagation:</strong> Contribuyó al algoritmo fundamental del aprendizaje profundo</li>
+      <li><strong>Deep Learning:</strong> Pionero en redes neuronales profundas</li>
+      <li><strong>Google Brain:</strong> Participó en proyectos de IA en Google</li>
+      <li><strong>Premio Turing (2018):</strong> Reconocimiento por sus contribuciones al deep learning</li>
+    </ul>`
+  },
+  aut5: {
+    title: 'Fei-Fei Li',
+    body: `<h1>Fei-Fei Li</h1>
+    <p>Científica computacional chino-estadounidense conocida como la "madrina de la IA" por su trabajo pionero en visión artificial, que sirve de base para muchos sistemas de inteligencia artificial de reconocimiento de imágenes.</p>
+    <h2>Contribuciones Principales</h2>
+    <ul>
+      <li><strong>ImageNet:</strong> Creó la base de datos masiva que revolucionó el reconocimiento de imágenes</li>
+      <li><strong>Visión por Computadora:</strong> Pionera en sistemas de reconocimiento visual</li>
+      <li><strong>AI4ALL:</strong> Fundó organización para diversificar la IA</li>
+      <li><strong>Stanford HAI:</strong> Co-directora del Instituto de IA Humana de Stanford</li>
+      <li><strong>Ética en IA:</strong> Promueve el desarrollo responsable de la inteligencia artificial</li>
+    </ul>`
+  },
+  aut6: {
+    title: 'Sundar Pichai',
+    body: `<h1>Sundar Pichai</h1>
+    <p>Empresario indio-estadounidense que lideró el desarrollo y expansión de Android, convirtiéndolo en el sistema operativo más utilizado del mundo, y promovió avances en inteligencia artificial y servicios digitales dentro de Google, fortaleciendo herramientas como el buscador y otras plataformas globales.</p>
+    <h2>Contribuciones Principales</h2>
+    <ul>
+      <li><strong>Android:</strong> Lideró su expansión hasta convertirlo en el SO móvil más usado</li>
+      <li><strong>Google Chrome:</strong> Supervisó el desarrollo del navegador líder mundial</li>
+      <li><strong>Google AI:</strong> Impulsó la integración de IA en productos de Google</li>
+      <li><strong>Google Cloud:</strong> Expansión de servicios empresariales en la nube</li>
+      <li><strong>CEO de Alphabet:</strong> Liderazgo en la empresa matriz de Google</li>
+    </ul>`
+  }
+};
+
+// ============================================================
 // SISTEMA DE ARCHIVOS
 // ============================================================
 const FILE_SYSTEM = {
@@ -219,24 +303,12 @@ const FILE_SYSTEM = {
           icon: ASSETS.folderIcon,
           clickable: true,
           children: [
-            { id: 'aut1', name: 'Elon Musk.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 1', 
-                body: '<h1>Elon Musk</h1><p>Biografía del autor 1...</p>' 
-            }, appGroup: 'autores' },
-            { id: 'aut2', name: 'Jeff Bezos.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 2', 
-                body: '<h1>Jeff Bezos</h1><p>Biografía del autor 2...</p>' 
-            }, appGroup: 'autores' },
-            { id: 'aut3', name: 'Ginni Rometty.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 3', 
-                body: '<h1>Ginni Rometty</h1><p>Biografía del autor 3...</p>' 
-            }, appGroup: 'autores' },
-            { id: 'aut4', name: 'Geoffrey Hinton.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 4', 
-                body: '<h1>Geoffrey Hinton</h1><p>Biografía del autor 4...</p>' 
-            }, appGroup: 'autores' },
-            { id: 'aut5', name: 'Fei-Fei Li.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 5', 
-                body: '<h1>Fei-Fei Li</h1><p>Biografía del autor 5...</p>' 
-            }, appGroup: 'autores' },
-            { id: 'aut6', name: 'Sundar Pichai.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: { title: 'Autor 6', 
-                body: '<h1>Sundar Pichai</h1><p>Biografía del autor 6...</p>' 
-            }, appGroup: 'autores' },
+            { id: 'aut1', name: 'Elon Musk.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: AUTORES_CONTENT.aut1, appGroup: 'autores' },
+            { id: 'aut2', name: 'Jeff Bezos.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: AUTORES_CONTENT.aut2, appGroup: 'autores' },
+            { id: 'aut3', name: 'Ginni Rometty.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: AUTORES_CONTENT.aut3, appGroup: 'autores' },
+            { id: 'aut4', name: 'Geoffrey Hinton.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: AUTORES_CONTENT.aut4, appGroup: 'autores' },
+            { id: 'aut5', name: 'Fei-Fei Li.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: AUTORES_CONTENT.aut5, appGroup: 'autores' },
+            { id: 'aut6', name: 'Sundar Pichai.docx', type: 'document', icon: ASSETS.docAuthors, clickable: true, content: AUTORES_CONTENT.aut6, appGroup: 'autores' },
           ]
         }
       ]

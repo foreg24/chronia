@@ -4,73 +4,73 @@
 const EPOCHS = [
   {
     id:'mesopotamia', name:'Mesopotamia', period:'~3500–500 a.C.',
-    type:'mesopotamia', mx:61.7, my:29.6,  // Medio Oriente (Irak)
+    type:'mesopotamia', mx:61.7, my:29.6,
     color:'#d4a574', icon:'🏺',
-    summary:'Los orígenes: ábacos de arcilla, tablillas cuneiformes y los primeros sistemas matemáticos que prefiguran la computación.',
+    summary:'Cuna de la civilización: sistemas de riego, la rueda, escritura cuneiforme, matemática sexagesimal y zigurats que sentaron las bases del conocimiento organizado.',
     authors:['Sumerios','Babilonios','Acadios'],
-    advances:['Ábaco primitivo de arcilla','Sistema sexagesimal (base 60)','Tablillas cuneiformes','Cálculo geométrico agrícola'],
+    advances:['Sistemas de riego e hidráulica','La rueda (alfarería y transporte)','Construcción con ladrillos','Zigurats (arquitectura monumental)','Sistema matemático sexagesimal','Escritura cuneiforme','Astronomía y calendario','Ladrillos cocidos'],
     materials:[{title:'Matemáticas Mesopotámicas',type:'pdf',size:'2.4 MB'},{title:'Ábacos y Computación Primitiva',type:'video',size:'150 MB'}]
   },
   {
     id:'egipto', name:'Egipto', period:'~3000–30 a.C.',
-    type:'egipto', mx:54.1, my:33.2,  // Egipto/Nilo
+    type:'egipto', mx:54.1, my:33.2,
     color:'#e8c85a', icon:'🔺',
-    summary:'Geometría aplicada para las pirámides, calendarios astronómicos y el Papiro de Ahmes: el primer documento de problemas matemáticos resueltos.',
-    authors:['Imhotep','Ahmes','Senedjem'],
-    advances:['Fracciones egipcias (Ojo de Horus)','Geometría para arquitectura','Calendarios astronómicos','Papiro de Ahmes — 84 problemas'],
+    summary:'Grandes ingenieros como Imhotep y Hemiunu diseñaron pirámides y sistemas de irrigación. Desarrollaron el Shadoof, el Seked, jeroglíficos, arado y el calendario solar de 365 días.',
+    authors:['Imhotep','Amenhotep (hijo de Hapu)','Hemiunu'],
+    advances:['Shadoof (palanca de contrapeso)','El Seked (medición de pendientes)','Escritura jeroglífica','Arado','Arquitectura monumental','Calendario solar (365 días)'],
     materials:[{title:'Papiro de Ahmes — Análisis',type:'pdf',size:'5.1 MB'},{title:'Construcción de Pirámides',type:'video',size:'200 MB'}]
   },
   {
     id:'grecia', name:'Grecia', period:'~800–31 a.C.',
-    type:'grecia', mx:50.9, my:23.5,  // Grecia/península balcánica
+    type:'grecia', mx:50.9, my:23.5,
     color:'#f0e6d2', icon:'🏛️',
-    summary:'La cuna del pensamiento lógico y matemático. El Mecanismo de Anticitera (150-100 a.C.) es considerada la primera computadora analógica de la historia.',
-    authors:['Arquímedes','Euclides','Ptolomeo','Hipatia'],
-    advances:['Mecanismo de Anticitera — primera computadora analógica','Geometría euclidiana','Teorema de Pitágoras','Ástrolabio y astronomía computacional'],
+    summary:'La cuna del pensamiento lógico y matemático. Arquímedes, Herón de Alejandría y Pitágoras sentaron bases de la física, robótica y matemáticas. Obras como el Partenón y el Túnel de Eupalinos demuestran su ingeniería.',
+    authors:['Arquímedes','Herón de Alejandría','Pitágoras de Samos'],
+    advances:['Partenón','Túnel de Eupalinos','Base de las matemáticas','Tornillo de Arquímedes','Principio de la palanca','Dioptra (topografía)','Tratamiento acústico'],
     materials:[{title:'El Mecanismo de Anticitera',type:'pdf',size:'4.8 MB'},{title:'Matemáticas Griegas',type:'video',size:'180 MB'},{title:'Arquímedes y la Computación',type:'slides',size:'8 MB'}]
   },
   {
     id:'edadmedia', name:'Edad Media', period:'476–1400 d.C.',
-    type:'edadmedia', mx:57, my:28.4,  // Jerusalén/Medio Oriente
+    type:'edadmedia', mx:57, my:28.4,
     color:'#9c7c4a', icon:'🏰',
-    summary:'Preservación del conocimiento clásico en monasterios, álgebra árabe y los primeros relojes mecánicos que anticipan la computación.',
-    authors:['Al-Khwarizmi','Al-Biruni','Roger Bacon','Fibonacci'],
+    summary:'Preservación del conocimiento clásico, álgebra árabe y los primeros relojes mecánicos. Gerberto de Aurillac, Al-Juarismi, Al-Jazari, Ibn Al-Haytham y Gutenberg revolucionaron la ciencia y la comunicación.',
+    authors:['Gerberto de Aurillac','Al-Juarismi','Al-Jazari','Ibn Al-Haytham','Johannes Gutenberg'],
     advances:['Álgebra sistemática (Al-Jabr)','Numeración posicional decimal','Relojes mecánicos','Números de Fibonacci'],
     materials:[{title:'Al-Khwarizmi y el Álgebra',type:'pdf',size:'4.1 MB'},{title:'Edad Media y la Ciencia',type:'video',size:'180 MB'}]
   },
   {
     id:'era1300', name:'1300–1700', period:'1300–1700',
-    type:'era1300', mx:50, my:18.5,  // Europa Central (Alemania/Italia)
+    type:'era1300', mx:50, my:18.5,
     color:'#c08840', icon:'⚙️',
-    summary:'Renacimiento científico: la imprenta, Leibniz, Pascal y las primeras calculadoras mecánicas. El cálculo diferencial y el código binario abren el camino.',
-    authors:['Leibniz','Pascal','Napier','Galileo','Descartes'],
+    summary:'Renacimiento científico: Newton, Copérnico, Kepler, Bacon, Galileo, Hooke, Oughtred y Pascal. De la Pascalina al telescopio, el método científico y las leyes del movimiento abrieron el camino a la computación.',
+    authors:['Isaac Newton','Nicolás Copérnico','Johannes Kepler','Francis Bacon','Galileo Galilei','Robert Hooke','William Oughtred','Blaise Pascal'],
     advances:['Pascalina — primera calculadora mecánica','Cálculo diferencial (Newton/Leibniz)','Logaritmos (Napier)','Código binario (Leibniz)'],
     materials:[{title:'La Pascalina y sus sucesoras',type:'pdf',size:'3.5 MB'},{title:'Leibniz y el Cálculo',type:'slides',size:'6 MB'}]
   },
   {
     id:'era1700', name:'1700–1900', period:'1700–1900',
-    type:'era1700', mx:46, my:20.4,  // Francia/Europa occidental
+    type:'era1700', mx:46, my:20.4,
     color:'#8fa8c0', icon:'🏭',
-    summary:'Revolución Industrial: la máquina analítica de Babbage, los telares de Jacquard y el primer algoritmo escrito por Ada Lovelace.',
-    authors:['Charles Babbage','Ada Lovelace','J.M. Jacquard','George Boole'],
-    advances:['Máquina Analítica de Babbage','Tarjetas perforadas (Jacquard)','Primer algoritmo programable (Ada)','Álgebra booleana'],
+    summary:'Revolución Industrial: Newcomen, Babbage, Watt, Morse, Edison, Tesla y Planck. De la máquina de vapor a la bombilla, el telégrafo y la Máquina Analítica que sentó bases de la computación moderna.',
+    authors:['Thomas Newcomen','Charles Babbage','James Watt','Samuel Morse','Thomas Alva Edison','Nikola Tesla','Max Planck'],
+    advances:['Máquina Analítica de Babbage','Telar programable (Jacquard)','Primer algoritmo programable (Ada)','Álgebra booleana'],
     materials:[{title:'Ada Lovelace — Primera Programadora',type:'pdf',size:'3.8 MB'},{title:'Máquinas de Babbage',type:'video',size:'250 MB'},{title:'Exposición: Rev. Industrial',type:'slides',size:'10 MB'}]
   },
   {
     id:'sigloxx', name:'Siglo XX', period:'1900–2000',
-    type:'sigloxx', mx:19.4, my:28.3,  // Estados Unidos (este)
+    type:'sigloxx', mx:19.4, my:28.3,
     color:'#00d4aa', icon:'💻',
-    summary:'Electrónica, computadoras digitales, lenguajes de programación y el nacimiento formal de la informática. Turing, von Neumann y Hopper lo cambian todo.',
-    authors:['Alan Turing','Grace Hopper','John von Neumann','Claude Shannon'],
+    summary:'Electrónica, computadoras digitales y el nacimiento formal de la informática. Tesla, Edison, Ford, los hermanos Wright, Bardeen, Turing y Berners-Lee cambiaron la tecnología para siempre.',
+    authors:['Nikola Tesla','Thomas Edison','Henry Ford','Wright Brothers','John Bardeen','Alan Turing','Tim Berners-Lee'],
     advances:['Máquina de Turing (1936)','Arquitectura von Neumann','COBOL, FORTRAN, LISP','Teoría de la Información (Shannon)'],
     materials:[{title:'Computación — Siglo XX',type:'pdf',size:'8.5 MB'},{title:'Historia de los Lenguajes',type:'video',size:'300 MB'}]
   },
   {
     id:'sigloxxi', name:'Siglo XXI', period:'2000–hoy',
-    type:'sigloxxi', mx:60, my:30.3,  // California (oeste EEUU)
+    type:'sigloxxi', mx:60, my:30.3,
     color:'#00f5ff', icon:'🌐',
-    summary:'Internet, IA, computación en la nube, DevOps y el futuro del software. Del World Wide Web al aprendizaje profundo y la computación cuántica.',
-    authors:['Tim Berners-Lee','Geoffrey Hinton','Linus Torvalds','Yann LeCun'],
+    summary:'Internet, IA, computación en la nube y el futuro del software. Web 2.0, smartphones, robótica avanzada, autos autónomos, impresión 3D, redes 5G, grafeno y computación cuántica definen esta era.',
+    authors:['Elon Musk','Jeff Bezos','Ginni Rometty','Geoffrey Hinton','Fei-Fei Li','Sundar Pichai'],
     advances:['World Wide Web (1991)','Aprendizaje profundo y redes neuronales','Computación cuántica (emergente)','DevOps y CI/CD moderno'],
     materials:[{title:'Introducción a la IA',type:'pdf',size:'12 MB'},{title:'Historia de Internet',type:'video',size:'450 MB'},{title:'Exposición: Era Digital',type:'slides',size:'14 MB'}]
   }
@@ -79,28 +79,31 @@ const EPOCHS = [
 const COURSE_MATERIAL = `MATERIAL DEL CURSO — Introducción a la Ingeniería de Software
 
 MESOPOTAMIA (~3500 a.C.):
-Los sumerios inventaron el ábaco de arcilla. Sistema sexagesimal (base 60) — aún usado en horas y grados. Tablillas cuneiformes para registrar datos.
+Sistemas de riego e hidráulica: canales, diques y represas. La rueda usada primero en alfarería y luego en transporte. Construcción con ladrillos de adobe y cocidos. Zigurats: templos escalonados con cálculos de peso y simetría. Sistema matemático sexagesimal (base 60) — aún usado en horas y grados. Escritura cuneiforme: primera forma de escritura, registraba contratos e inventarios. Astronomía y calendarios para agricultura. Ladrillos cocidos: más resistentes al agua.
 
 EGIPTO (~3000 a.C.):
-Papiro de Ahmes (Papiro de Rhind): 84 problemas matemáticos resueltos, circa 1650 a.C. Imhotep diseñó la pirámide de Djoser. Fracciones unitarias (Ojo de Horus).
+Imhotep: primer ingeniero y arquitecto, diseñó la Pirámide Escalonada de Zoser. Amenhotep (hijo de Hapu): supervisó construcciones en Tebas. Hemiunu: arquitecto jefe de la Gran Pirámide de Guiza. Shadoof: palanca de contrapeso para irrigación. El Seked: relación horizontal/vertical para medir pendientes. Escritura jeroglífica con papiros y tintas. Arado para agricultura. Arquitectura monumental: pirámides y templos. Calendario solar de 365 días basado en las crecidas del Nilo.
 
 GRECIA (~800–31 a.C.):
-El Mecanismo de Anticitera (150-100 a.C.) es la primera computadora analógica conocida. Arquímedes desarrolló métodos de cálculo anticipando el cálculo integral. Euclides sistematizó la geometría. Pitágoras estableció bases del razonamiento lógico-matemático.
+Partenón: una de las mayores obras arquitectónicas. Túnel de Eupalinos: proyecto hidráulico impresionante. Base de las matemáticas: ingeniería como ciencia teórica. Tornillo de Arquímedes para transportar agua. Principio de la palanca. Dioptra para topografía. Tratamiento acústico en ágoras y auditorios. Arquímedes: fundamentos de la física hidráulica. Herón de Alejandría: primer libro de robótica. Pitágoras: fundamentos de las matemáticas y teorema de Pitágoras.
 
 EDAD MEDIA (476–1400 d.C.):
-Al-Khwarizmi escribió "Al-Jabr" (~820 d.C.) — origen de "álgebra" y "algoritmo". Fibonacci introdujo la numeración arábiga en Europa. Relojes mecánicos como primeras máquinas de medición precisa.
+Gerberto de Aurillac: instrumentos astronómicos islámicos y ábaco mejorado. Al-Juarismi: desarrolló el álgebra, difundió numeración indo-arábiga, valor posicional y el cero. Al-Jazari: máquinas hidráulicas, relojes mecánicos automáticos y robots primitivos. Ibn Al-Haytham: fundó la óptica moderna. Johannes Gutenberg: imprenta, redujo costos y tiempo de producción de libros.
 
 1300–1700:
-Blaise Pascal: Pascalina (1642). Leibniz: código binario + Stepped Reckoner (1673). Newton/Leibniz: cálculo diferencial. Napier: logaritmos (1614).
+Isaac Newton: leyes del movimiento y gravitación universal. Nicolás Copérnico: heliocentrismo. Johannes Kepler: leyes del movimiento planetario. Francis Bacon: método científico. Galileo Galilei: telescopio. Robert Hooke: microscopio. William Oughtred: regla de cálculo. Blaise Pascal: Pascalina, primera calculadora mecánica para sumas y restas.
 
 1700–1900:
-Jacquard: telar programable con tarjetas perforadas (1804). Babbage: Máquina Diferencial y Analítica (concepto CPU/memoria). Ada Lovelace: primer algoritmo para máquina (1843). Boole: álgebra booleana (1854).
+Thomas Newcomen: precursor de la máquina de vapor atmosférica. Charles Babbage: Máquina Analítica, bases de la computación moderna. James Watt: perfeccionó la máquina de vapor moderna. Samuel Morse: sistema de telegrafía eléctrica. Thomas Alva Edison: bombilla incandescente. Nikola Tesla: sistemas de corriente alterna (CA) y motor de inducción. Max Planck: fundó la física cuántica, clave para microchips. Máquina de Newcomen para extraer agua de minas. Locomotora de vapor. Telar mecánico y máquina de hilar. Telégrafo eléctrico. Máquina Analítica para precisión mecánica absoluta.
 
 SIGLO XX (1900–2000):
-Alan Turing: Máquina de Turing (1936). Claude Shannon: Teoría de la Información (1948). John von Neumann: arquitectura moderna (1945). Grace Hopper: primer compilador, contribuyó a COBOL. FORTRAN (1957), LISP (1958), COBOL (1959).
+Nikola Tesla: corriente alterna (AC), base de la electricidad moderna. Thomas Edison: bombilla eléctrica y sistemas de distribución. Henry Ford: línea de ensamblaje. Wright Brothers: primer avión con motor. John Bardeen: transistor, base de la electrónica moderna. Alan Turing: bases de computadoras e inteligencia artificial. Tim Berners-Lee: World Wide Web (internet moderno).
 
 SIGLO XXI (2000–hoy):
-Tim Berners-Lee: World Wide Web (1991). Linus Torvalds: Linux (1991). Aprendizaje profundo (Hinton, LeCun): revolución IA desde 2012. Metodologías ágiles: Scrum, Kanban, DevOps. Computación cuántica emergente.
+Web 2.0: evolución de navegadores con audio, video y plugins. Smartphones: desarrollo masivo en el siglo XXI. Robótica avanzada: robots con aprendizaje, navegación autónoma y adaptación. Inteligencia Artificial: de campo experimental a tecnología central. Automóviles autónomos: conducción sin intervención humana. Impresión 3D: fabricación aditiva capa por capa. Redes 4G-5G: velocidades de 20-100 Mbps, streaming HD. Grafeno: aislado en 2004 por Geim y Novoselov (Nobel 2010). Computación cuántica: procesamiento con leyes de la mecánica cuántica.
+
+INVENTORES DEL SIGLO XXI:
+Elon Musk: SpaceX, Tesla, exploración espacial y vehículos eléctricos. Jeff Bezos: Amazon, comercio electrónico y tecnología. Ginni Rometty: lideró IBM hacia IA y computación en la nube. Geoffrey Hinton: Máquina de Boltzmann, aprendizaje no supervisado en IA. Fei-Fei Li: "madrina de la IA", visión artificial y reconocimiento de imágenes. Sundar Pichai: Android, Google AI y servicios digitales globales.
 `;
 
 
