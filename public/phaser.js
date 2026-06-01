@@ -1015,7 +1015,7 @@ class EpochScene extends BaseScene {
             const prefix = this.epochData.bgPrefix;
             // Carga hasta 10 frames (ajusta según necesites)
             // Si no existe la textura, Phaser la ignora silenciosamente
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= 20; i++) {
                 this.load.image(`${prefix}_${i}`, `assets/backgrounds/${prefix}_${i}.png`);
             }
         }
